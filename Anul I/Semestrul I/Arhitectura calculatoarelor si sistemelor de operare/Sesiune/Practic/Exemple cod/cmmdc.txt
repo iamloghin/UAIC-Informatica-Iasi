@@ -1,0 +1,18 @@
+
+    //cmmdc
+	_asm
+	{
+	mov eax,a
+	mov ebx,b
+	start_while:
+		cmp eax,ebx
+			jz gasit
+			jl a_mai_mic
+			sub eax,ebx
+			jmp start_while
+			a_mai_mic:
+		sub ebx,eax
+		jmp start_while
+			gasit:
+		mov b,ebx
+	}

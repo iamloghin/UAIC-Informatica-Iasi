@@ -1,0 +1,59 @@
+Documentatie Assembler
+
+Variabile 64 biti
+	-eax
+	-ebx
+	-ecx
+	-edx
+Variabile 32 biti
+	-ax
+	-bx
+	-cx
+	-dx
+
+*ecx bun pentru contor
+*eax bun pentru rezultate
+
+
+1) sup eax, ebx //scade rezultatul in primul
+
+2) mov eax, ebx //muta ebx in eax
+
+3) add eax,ebx  // aduna eax cu ebx rezultatul va fi pus in eax
+
+4) mul ebx //inmulteste eax cu ebx rezultatul se va pune in eax
+
+5) div ebx // imparte  eax la ebx rezultatul in eax restul in edx
+
+6) inc c //incrementare
+
+7) jmp nume_eticheta //salt neconditionat
+
+8) cmp eax, ebx //compara cele doua variabile in functie de ce puneti mai departe
+
+	jump signed		jump unsigned
+
+	jg(>)			ja
+	jl(<)			jb
+	je(=)			jz
+	jne(!=)			jnz
+	jge(>=)			jae
+	jle(<=)			jbe
+
++ nume eticheta  //compare-urile trebuie sa aiba cel putin un registru
+
+9) lea esi, eax //salveaza adresa lui eax in esi
+
+10)
+
+Vectori
+
+	[ebx]
+	[ebx+ecx*4] //pozitia ecx in vectorul ebx
+1) mov ebx, s //lungimea vectorului pentru char* s
+
+2) lea ebx, s //lungimea vectoruli pentru char s[]
+
+byte ptr //1 byte
+word ptr //2 bytes
+dword ptr //4 bytes

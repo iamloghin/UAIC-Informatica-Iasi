@@ -1,0 +1,4 @@
+﻿  Problema2.cpp
+c:\users\lgoro\desktop\acso - examen\problema2\problema2\problema2.cpp(34): warning C4102: '_if1': unreferenced label
+  Problema2.vcxproj -> C:\Users\LGoro\Desktop\ACSO - examen\Problema2\Debug\Problema2.exe
+  Problema2.vcxproj -> C:\Users\LGoro\Desktop\ACSO - examen\Problema2\Debug\Problema2.pdb (Full PDB)
