@@ -1,0 +1,16 @@
+class ShoppingList
+{
+public:
+
+list<Item*> shoppingList;
+
+void addItem(Item* item)
+{
+shoppingList.push_back(item);
+}
+
+void printList()
+{
+for (auto item = shoppingList.begin(); item != shoppingList.end(); item++)
+cout << (*item)->name <<" "<<(*item)->getInfo() << " ; ";
+}
