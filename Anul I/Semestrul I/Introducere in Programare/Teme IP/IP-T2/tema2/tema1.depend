@@ -1,0 +1,28 @@
+# depslib dependency file v1.0
+1480720123 source:c:\users\lgoro\desktop\ip-t2\tema1\main.cpp
+	<iostream>
+	"t2.h"
+
+1480526530 c:\users\lgoro\desktop\ip-t2\tema1\t2.h
+	<string.h>
+	<string>
+
+1480098137 source:c:\users\lgoro\desktop\ip-t2\tema1\b2.cpp
+	<iostream>
+	<cstring>
+	<cmath>
+	"t2.h"
+
+1480098114 source:c:\users\lgoro\desktop\ip-t2\tema1\backup.cpp
+	<iostream>
+	<cstring>
+	<cmath>
+	"t2.h"
+
+1481318857 source:d:\facultate\an 1 sem i\introducere in programare\teme ip\ip-t2\tema1\main.cpp
+	"t2.h"
+
+1481245955 d:\facultate\an 1 sem i\introducere in programare\teme ip\ip-t2\tema1\t2.h
+	<string.h>
+	<string>
+
