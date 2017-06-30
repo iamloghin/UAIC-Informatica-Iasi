@@ -1,0 +1,84 @@
+<html>
+<head><title>Intreruperi 8086</title></head>
+<body>
+<h2>Intreruperi 8086</h2>
+<br/>
+
+O intrerupere este un semnal transmis sistemului de calcul care anunta aparitia unui eveniment “neobisnuit”.
+<br/><br/>
+
+<p> 
+Pot exista maxim 256 de intreruperi. Fiecare intrerupere are asociata o rutina de cod numita Rutina de Tratare a intreruperii (RTI), care se executa la aparitia intreruperii respective. Nu sunt definte toate cele 256 de intreruperi (nu exista rutine asociate cu toate cele 256 de intreruperi).
+</p>
+ 
+<p>
+La aparitia unei intreruperi au loc urmatoarele actiunii:
+<ul>
+    <li>suspendarea programului in curs de executie</li>
+    <li>lansarea in executie a rutinei de tratare a intreruperi respective</li>
+    <li>reluarea executiei programului suspendat (in majoritatea cazurilor)</li>
+</ul>
+Tratarea aparitiei unei intreruperi (executarea rutinei asociate) se face doar intre doua instructiuni masina consecutive.
+</p>
+ 
+<p>
+In functie de cauzele care genereaza aparitia unui semnal de intrerupere, acestea se pot clasifica in:
+<ol>
+	<li>intruperi externe microprocesorului: apasarea unei taste, terminarea unei operatii de intrare/iesire</li>
+	<li>intreruperi interne microprocesorului: impartirea la zero, tentativa de adresare a unei zone de memorie care nu exista, tentativa de executarea a unei instructiuni care are cod inexistent</li>
+</ol>
+ 
+In functie de nivelul la care sunt definite intreruperile in cadrul sistemul de calcul acestea se pot clasifica astfel:
+<ol>
+	<li>intreruperi hard. Rutinele acestor intreruperi sunt scrise de proiectantii de calculatoare si se afla memorate in cipurile fizice ale calculatorului.<br/>
+            Ex:<ul>
+            <li>intreruperea 00h – se genereaza ca urmare a unei tentative de impartire la 0</li>
+	    <li>intreruperea 01h – se apeleaza dupa fiecare instructiune masina daca este setat TF (TrapFlag = 1). Este folosita de depanatoare gen Turbo Debuger.</li>
+	    <li>intreruperea 08h – intrerupere de “ceas”. Se genereaza odata la 55 milisecunde. Este folosita pentru a programa anumite actiuni care trebuie sa se desfasoare periodic.</li>
+	    </ul>
+	</li> 
+
+	<li>intreruperi BIOS. Rutinele acestor intreruperi sunt scrise de proiectantii BIOS-ului calculatorului.<br/>
+            Ex:<ul>
+	    <li>intreruperea 10h – permite lucrul cu ecranul in mod grafic (si bineinteles si in mod text)</li>
+	    <li>intreruperea 11h – ofera informatii despre echipamentele instalate in sistem</li>
+	    <li>intreruperea 12h – informatii despre dimensiunea memoriei RAM</li>
+	    <li>intreruperea 13h – lucrul cu hardiscul si cu unitatea de discketa</li>
+	    </ul>
+	</li> 	
+	<li>intreruperi DOS. Rutinele acestor intreruperi sunt scrie de proiectantii sistemului de operare.<br/>
+            Ex:<ul>
+	    <li>intreruperea 20h – terminarea unui program.</li>
+	    <li>intreruperea 21h – ofera toate functiile sistem oferite de sistemul de operare DOS</li>
+	    <li>intreruperea 33h – lucrul cu mouse-ul</li>
+	    </ul>
+ 	</li>
+	<li>intreruperi definite de programatori.</li>
+</ol>
+ 
+<p>
+Rutinele unor intreruperi soft (BIOS si DOS) pot trata in mod diferentiat intreruperea generata in functie de o anumita valoare specificata in registrul AH. Spunem ca intreruperea respectiva ofera mai multe “servicii” sau “functii”.
+</p>
+ 
+<p>
+Exemplul 1:
+Functia 02h a intreruperii 21h permite afisarea unui caracter pe ecran. Intreruperea asteapta in registrul AH codul functiei (02h) iar in registrul DL, codul ASCII al caracterului pe care dorim sa il tiparim la iesirea standard. Modul de apel este:<br/><br/>
+
+mov ah, 02h <br/>
+mov dl, ‘A’ <br/>
+int 21h  ; instructiunea 'int' cere procesorului sa genereze intreruperea 21h<br/>
+<br/>
+Efectul acestui grup de instructiuni este afisarea carecterului ‘A’ la iesirea standard.
+
+ 
+
+<p><b>Observatii:</b>
+<ul>
+    <li>Lista completa a tuturor intreruperilor si a functiilor oferite de acestea se gaseste in Norton Guide. Este recomandata o parcurgere prealabila (lecturare si nu memorare) a tuturor intreruperilor si functiilor. Nu se cerere memorarea tuturor intreruperilor si a functiilor, dar studentul trebuie sa stie sa caute in documentatia electronica suportul pentru a rezolva un anumit tip de problema.</li>
+    <li>Unele intreruperi figureaza in documentatii ca “rezervate” sau “nedocumentate”. Este vorba de intreruperi pentru care proiectantii lor (autorii rutinelor de tratare) nu au facut publice specificatii, fie ca utilizarea lor poate duce la actiuni neprevazute, fie ca actiunea intreruperii respective se poate schimba de la o versiune la alta a sistemului de operare sau BIOS-ului calculatorului. Se va evita folosirea acestor intreruperi.</li>
+    <li>Unele intreruperi s-ar putea sa nu functioneze conform asteptarilor in mediile Windows.</li>
+</ul>
+</p>
+
+</body>
+</html>

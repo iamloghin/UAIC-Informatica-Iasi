@@ -1,0 +1,76 @@
+<html>
+
+<head>
+
+<title>Laborator 5 - exemplu</title>
+</head>
+
+
+<body>
+<strong>Laborator 5 - exemplu</strong><br><br>
+
+; Se dau cuvintele A si B. Se cere cuvantul C format astfel:<br>
+;- bitii 0-2 ai lui C coincid cu bitii 10-12 ai lui B<br>
+;- bitii 3-6 ai lui C au valoarea 1<br>
+;- bitii 7-10 ai lui C coincid cu bitii 1-4 ai lui A<br>
+;- bitii 11-12 ai valoarea 0<br>
+;- bitii 13-15 ai lui C concid cu inverul bitilor 9-11 ai lui B<br><br>
+
+; Vom obtine cuvantul C prin operatii succesive de "izolare". Numim operatia<br>
+; de izolare a bitilor 10-12 ai lui B, pastrarea intacta a valorii acestor<br>
+; biti, si initializarea cu 0 a celorlalti biti. Operatiunea de izolare se<br>
+; realizeaza cu ajutorul operatorului and intre cuvantul B si masca<br>
+; 0001110000000000. Odata bitii izolati, printr-o operatie de rotire se<br>
+; deplaseaza grupul de biti doriti in pozitia dorita. Cuvantul final se<br>
+; obtine prin aplicarea operatorului or intre rezultatele intermediare<br>
+; obtinute in urma izolarii si rotirii.<br>
+; Observatie: rangul bitilor se numara de la dreapta la stanga<br><br>
+
+assume cs:code, ds:data<br>
+data segment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;a dw 0111011101010111b<br>
+&nbsp;&nbsp;&nbsp;&nbsp;b dw 1001101110111110b<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c dw ?<br>
+data ends<br><br>
+
+code segment<br>
+start:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  mov ax, data ; incarcam adresa segmentului de date in resgistrul ds<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  mov ds, ax<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;  mov bx, 0 ; in registrul bx vom calcula rezultatul<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;  mov ax, b ; izolam bitii 10-12 ai lui b<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  and ax, 0001110000000000b<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  mov cl, 10<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  ror ax, cl ; rotim 10 bozitii spre dreapta<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  or bx, ax ; punem bitii in rezultat<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;  or bx, 0000000001111000b ; facem biti 3-6 din rezultat sa aiba valoarea 1<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;  mov ax, a ; izolam biti 1-4 ai lui a<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  and ax, 0000000000011110b<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  mov cl, 6<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  rol ax, cl ; rotim 6 pozitii spre stanga<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  or bx, ax ; punem bitii in rezultat<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;  and bx, 1110011111111111b ; facem biti 11-12 din rezultat sa aiba valoarea 0<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;  mov ax, b<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  not ax ; inversam valaorea lui b<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  and ax, 0000111000000000b ; izolam biti 9-11 ai lui b<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  mov cl, 4<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  rol ax, cl ; deplasam biti 4 pozitii spre stanga<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  or bx, ax ; punem biti in rezultat<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;  mov c, bx ; punem valoarea din registru in variabila rezultat<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;  mov ax, 4c00h ; terminam programul<br>
+&nbsp;&nbsp;&nbsp;&nbsp;  int 21h<br>
+code ends<br>
+end start<br><br>
+
+
+</body>
+
+</html>

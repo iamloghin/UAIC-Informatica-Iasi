@@ -1,0 +1,40 @@
+<html>
+
+<head>
+
+<title>Laborator 6</title>
+</head>
+
+
+<body>
+<strong>Laborator 6 - operatii pe siruri</strong><br><br>
+
+<strong>Comparatii intre operanzi</strong><br><br>
+
+<strong>CMP d,s</strong><br>
+comparatie valori operanzi  (nu modifica operanzii) - executie fictiva d - s<br>
+modifica flagurile OF, SF, ZF, AF, PF si CF<br><br>
+
+<strong>TEST d,s</strong><br>
+executie fictiva  d AND s<br>
+modifica flagurile OF, CF, SF, ZF, PF<br><br><br>
+
+<strong>Salturi conditionate de flaguri</strong><br><br>
+
+Cand se compara doua numere cu semn se folosesc termenii "less than" (mai mic decat) si "greater than" (mai mare decat), iar cand se compara doua numere fara semn se folosesc termenii "below" (inferior, sub) si respectiv "above" (superior, deasupra, peste). <br><br>
+
+<a href="lab6-j-en.doc" target="_blank">Instructiuni de salt conditionat</a><br><br><br>
+
+<strong>Instructiuni de ciclare</strong><br><br>
+
+[instructiune] eticheta<br><br>
+
+Limbajul de asamblare 80x86 prevede instructiuni speciale pentru realizarea ciclarii. Ele sunt: LOOP, LOOPE, LOOPNE si JCXZ<br><br>
+
+Instructiunea LOOP comanda reluarea executiei blocului de instructiuni ce incepe la eticheta, atata timp cat valoarea din registrul CX este diferita de 0.  Se efectueaza intai decrementarea registrului CX si apoi se face testul si eventual saltul. Saltul este "scurt" (max. 127 octeti - atentie deci la "distanta" dintre LOOP si eticheta!). <br><br>
+
+Instructiunea LOOPE (LOOP while Equal) difera fata de LOOP prin conditia de terminare, ciclul terminandu-se fie daca CX=0, fie daca ZF=1. in cazul instructiunii LOOPNE (LOOP while Not Equal) ciclul se va termina fie daca CX=0, fie daca ZF=0. Chiar daca iesirea din ciclu se face pe baza valorii din ZF, decrementarea lui CX are oricum loc.<br><br>
+
+</body>
+
+</html>

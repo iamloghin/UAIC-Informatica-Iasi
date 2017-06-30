@@ -1,0 +1,116 @@
+<html>
+
+<head>
+
+<title>Laborator 6 - exemplu</title>
+</head>
+
+
+<body>
+<strong>Laborator 6 - exemplu</strong><br><br>
+
+Se da un sir de caractere format din litere mici. Sa se transforme in literele mari corespunzatoare.<br><br>
+
+Daca se da sirul:<br>
+s db ’a’, ’v’, ’x’, ’a’, ’c’<br>
+trebuie sa se obtina sirul rezultat:<br>
+d db ’A’, ’V’, ’X’, ’A’, ’C’<br><br>
+
+
+assume cs:code, ds:data<br>
+data segment<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s db ’a’, ’v’, ’x’, ’a’, ’c’<br><br>
+
+;aceasta declaratie este echivalenta cu urmatoarea:<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s db ’avxac’<br>
+;efectul celor doua instructiuni fiind alocarea a cate unui octet pentru fiecare caracter din sir, in ordinea in care acestea apar<br>
+
+;cand spunem „offset-ul variabilei s” ne referim la deplasamentul sirului s in cadrul segmentului de memorie in care se afla<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;l EQU $-s<br><br>
+
+;$ reprezinta valoarea contorului de locatii si are semnificatia de valoare curenta a offset-ului 
+(adica cati octeti au fost alocati de catre asamblor pana in acest punct al codului generat corespunzator 
+segmentului de date pentru programul nostru; in acest moment $=5 pentru ca s-au alocat 5 octeti pentru caracterele ’a’‚’v’,’x’,’a’,’c’)<br>
+;scazand offset-ul lui s din offset-ul curent obtinem numarul de octeti ai sirului s, adica numarul de caractere din sir<br>
+;numarul astfel obtinut este retinut in constanta <em>l</em> <br>
+;se putea folosi si declaratia: <br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;l db $-s <br>
+;in ipoteza ca lungimea sirului poate fi memorata intr-un octet; avantajul folosirii directivei EQU va putea fi observat in cele ce urmeaza<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;d db l dup (?)<br><br>
+
+;alocam spatiu pentru sirul rezultat d, care va avea aceeasi lungime ca si s<br>
+;operatorul DUP se foloseste pentru rezervarea unui bloc de memorie de lungime <em>l</em> <br>
+;prezenta caracterului ’?’ in aceasta declaratie are ca efect doar rezervarea 
+zonei respective de memorie, fara a o initializa cu nici o valoare. <br>
+;Daca am fi dorit initializarea octetilor din aceasta zona de memorie cu valoarea 0, 
+am fi folosit urmatoarea declaratie:<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;d db l dup (0)<br>
+;motivul pentru care putem folosi valoarea lui <em>l</em> in aceasta declaratie este faptul ca 
+atribuirea valorii constantei <em>l</em> se face in faza de asamblare; in schimb, daca pentru 
+obtinerea lungimii sirului s-ar fi fost folosita declaratia:<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;l db $-s<br>
+;atunci, necunoscandu-i-se valoarea la asamblare, <em>l</em> nu ar fi putut sa apara in declaratia:<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;d db l dup (?)<br>
+;obtinand la asamblare mesajul de eroare „Expecting scalar type” <br>
+;o alta diferenta intre cele doua variante prezentate este faptul ca directiva EQU nu provoaca 
+generare de octeti, deci practic constantei <em>l</em> nu i se aloca spatiu in segmentul de date. in schimb, 
+daca folosim directiva db pentru <em>l</em>, se va genera un octet. <br><br>
+  
+data ends<br>
+code segment<br>
+start:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov ax, data<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov ds, ax<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov cx, l&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;pregatim in registrul CX lungimea sirului s, deoarece vom folosi instructiunea loop pentru executia repetata a unui set de instructiuni<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov si, 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;registrul SI va fi folosit ca si index in cele doua siruri<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;jcxz Sfarsit&nbsp;&nbsp;&nbsp;;vom folosi instructiunea loop, care executa o bucla de CX ori, motiv 
+pentru care ne asiguram ca valoarea din CX nu este 0 inaintea intrarii in 
+bucla, caz in care bucla s-ar executa de 65535 ori (deoarece are loc intai decrementarea 0-1 = -1 = 65535 si apoi testul)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Repeta:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov al, byte ptr s[si]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;in AL se copiaza octetul care se afla in segmentul de 
+date la offset-ul lui s plus SI octeti; obtinem astfel octetul de rang SI din sir, unde primul octet are rangul 0<br> 
+;in acest moment, in AL avem codul ASCII al unei litere mici din sirul sursa s<br> <br>
+;datorita tipului byte al variabilei s, este corecta si folosirea instructiunii:<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov al, s[si]<br>
+;daca am fi avut un sir de cuvinte, declarat astfel:<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sw dw ’a’, ’v’, ’x’, ’a’, ’c’<br>
+;atunci instructiunea:<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov al, s[si]<br>
+;ar fi constituit o eroare sintactica, generand aparitia mesajului de eroare „Operand types do not 
+match”, datorita faptului ca al este octet iar s este cuvant<br> 
+;corecta in acest caz ar fi fost folosirea instructiunii:<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov al, byte ptr s[si]<br>
+;care ar fi avut ca si efect incarcarea in AL a celui mai putin semnificativ octet din cuvantul de la offset-ul s+SI<br><br>
+
+;reamintim in acest context formula de calcul a offset-ului unui operand, ce reflecta 3 moduri de adresare la memorie: <br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;directa, atunci cand apare numai constanta;<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bazata, daca in calcul apare BX respectiv BP;<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;indexata, daca in calcul apare DI respectiv SI;<br>
+;adresaoffset = [ BX | BP ] + [ DI | SI ] + [ constanta ]<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sub al, ’a’-’A’&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;pentru a obtine litera mare corespunzatoare literei mici al 
+carei cod ASCII se afla in al, vom scadea din codul ASCII al literei mici diferenta ’a’-’A’ (diferenta dintre codul 
+ASCII al caracterului ’a’ si codul ASCII al caracterului ’A’ ), care este chiar diferenta intre codul ASCII al oricarei 
+litere mici si codul ASCII al literei mari corespunzatoare ei<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov byte ptr d[si], al&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;litera mare astfel obtinuta o retinem in sirul 
+destinatie d, pe aceeasi pozitie SI pe care se afla litera mica in sirul sursa s<br>
+;este corecta si folosirea instructiunii:<br>
+;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;mov d[si], al<br>
+;din aceleasi motive explicate mai sus<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;inc si&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;trecem la urmatorul octet din sir<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loop Repeta<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sfarsit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;terminarea programului<br>
+mov ax, 4C00h<br>
+int 21h<br>
+code ends<br>
+end start<br>
+
+
+
+</body>
+
+</html>

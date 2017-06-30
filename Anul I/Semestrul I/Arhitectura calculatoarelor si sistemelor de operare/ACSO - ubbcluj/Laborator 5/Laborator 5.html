@@ -1,0 +1,143 @@
+<html>
+
+<head>
+
+<title>Laborator 5</title>
+</head>
+
+
+<body>
+<strong>Laborator 5 - operatii pe biti</strong><br><br>
+
+<strong>Operatii de deplasare de biti</strong><br><br>
+
+<strong>shl</strong> - shift left (deplaseaza în stânga)<br>
+<strong>shr</strong> - shift right (deplaseaza în dreapta)<br>
+<strong>sal</strong> - shift arithmetic left (deplasare artimetica în stânga)<br>
+<strong>sar</strong> - shift arithmetic right (deplasare aritmetica în dreapta)<br><br>
+
+<strong>shl destinatie, numar</strong><br>
+- destinatie poate fi registru pe 1 sau 2 octeti sau o locatie de memorie de 1 sau 2 octeti<br>
+- numar poate fi 1 sau registrul cl, valoarea din cl nu trebuie sa depaseasca 31<br><br>
+
+Efect:<br>
+Bitii stocati în destinatie se deplaseaza numar pozitii spre stânga. Bitul (sau bitii) cel mai din dreapta se completeaza cu 0. Ultimul bit care iese în stânga se pastreaza în CF.<br><br>
+
+Exemplu:<br>
+mov al, 00110011<br>
+mov cl, 2<br>
+shl al, cl ; -> al = 11001100, CF = 0<br><br>
+
+<strong>shr destinatie, numar</strong><br>
+- destinatie poate fi registru pe 1 sau 2 octeti sau o locatie de memorie de 1 sau 2 octeti<br>
+- numar poate fi 1 sau registrul cl, valoarea din cl nu trebuie sa depaseasca 31<br><br>
+
+Efect:<br>
+Bitii stocati în destinatie se deplaseaza numar pozitii spre dreapta. Bitul (sau bitii) cel mai din stânga se completeaza cu 0. Ultimul bit care iese în dreapta se pastreaza în CF.<br><br>
+
+Exemplu:<br>
+mov al, 01011110<br>
+mov cl, 2<br>
+shr al, cl ; -> al = 00010111, CF = 1<br><br>
+
+<strong>sar destinatie, numar</strong><br>
+- destinatie poate fi registru pe 1 sau 2 octeti sau o locatie de memorie de 1 sau 2 octeti<br>
+- numar poate fi 1 sau registrul cl, valoarea din cl nu trebuie sa depaseasca 31<br><br>
+
+Efect:<br>
+Bitii stocati în destinatie se deplaseaza numar pozitii spre dreapta. Bitul (sau bitii) cel mai din stânga se completeaza cu bitul de semn (bitul cel mai din stânga înainte de rotire). Ultimul bit care iese în dreapta se pastreaza în CF.<br><br>
+
+Exemplu:<br>
+mov al, 11011110<br>
+mov cl, 2<br>
+sar al, cl ; -> al = 11110111, CF = 1<br><br>
+
+<strong>Sintaxa sal</strong>: identica cu sintaxa shl<br><br><br>
+
+
+<strong>Operatii de rotire de biti</strong><br><br>
+
+<strong>rol</strong> - rotate left<br>
+<strong>ror</strong> - rotate right<br>
+<strong>rcl</strong> - rotate through carry left<br>
+<strong>rcr</strong> - rotate through carry right <br><br>
+
+<strong>rol destinatie, numar</strong><br>
+- destinatie poate fi registru pe 1 sau 2 octeti sau o locatie de memorie de 1 sau 2 octeti<br>
+- numar poate fi 1 sau registrul cl, valoarea din cl nu trebuie sa depaseasca 31<br><br>
+
+Efect:<br>
+Bitii stocati în destinatie se rotesc numar pozitii spre stânga. Odata un bit iesit în stânga el se adauga automat în partea dreapta a destinatiei. Ultimul bit rotit se pastreaza în CF.<br><br>
+
+Exemplu:<br>
+mov al, 00110011<br>
+mov cl, 2<br>
+rol al, cl ; -> al = 11001100, CF = 0<br><br>
+
+<strong>ror destinatie, numar</strong><br>
+- destinatie poate fi registru pe 1 sau 2 octeti sau o locatie de memorie de 1 sau 2 octeti<br>
+- numar poate fi 1 sau registrul cl, valoarea din cl nu trebuie sa depaseasca 31<br><br>
+
+Efect:<br>
+Bitii stocati în destinatie se rotesc numar pozitii spre dreapta. Odata un bit iesit în dreapta el se adauga automat în partea stânga a destinatiei. Ultimul bit rotit se pastreaza în CF.<br><br>
+
+Exemplu:<br>
+mov al, 00111110<br>
+mov cl, 2<br>
+ror al, cl ; -> al = 10001111, CF = 1<br><br>
+
+<strong>rcl destinatie, numar</strong><br>
+- destinatie poate fi registru pe 1 sau 2 octeti sau o locatie de memorie de 1 sau 2 octeti<br>
+- numar poate fi 1 sau registrul cl, valoarea din cl nu trebuie sa depaseasca 31<br><br>
+
+Efect:<br>
+Bitii stocati în destinatie se rotesc numar pozitii spre stânga. Odata un bit iesit în stânga el se pastreaza în CF. Valoarea anteriora din CF se adauga automat în partea dreapta a destinatiei.<br><br>
+
+Exemplu:<br>
+stc; CF = 1 (set carry)<br>
+mov al, 00110011<br>
+mov cl, 2<br>
+rcl al, cl ; -> al = 11001110, CF = 0<br><br>
+
+<strong>rcr destinatie, numar</strong><br>
+- destinatie poate fi registru pe 1 sau 2 octeti sau o locatie de memorie de 1 sau 2 octeti<br>
+- numar poate fi 1 sau registrul cl, valoarea din cl nu trebuie sa depaseasca 31<br><br>
+
+Efect:<br>
+Bitii stocati în destinatie se rotesc numar pozitii spre dreapta. Odata un bit iesit în dreapta el se pastreaza în CF. Valoarea anteriora din CF se adauga automat în partea stânga a destinatiei.<br><br>
+
+Exemplu:<br>
+stc; CF = 1 (set carry)<br>
+mov al, 00110011<br>
+mov cl, 2<br>
+rcr al, cl ; -> al = 11001100, CF = 1<br><br>
+<br>
+
+<strong>Operatii logice</strong><br><br>
+
+<strong>and</strong> - SI logic<br>
+<strong>or</strong> - SAU logic<br>
+<strong>xor</strong> - SAU EXCLUSIV logic<br>
+<strong>not</strong> - negare logica<br><br>
+
+<strong>and destinatie, sursa</strong><br>
+<strong>or destinatie, sursa</strong><br>
+<strong>xor destinatie, sursa</strong><br>
+<strong>not destinatie</strong><br>
+- destinatie poate fi registru sau memorie pe unul sau doi octeti<br>
+- sursa poate fi registru, memorie sau constanta pe unul sau doi octeti<br>
+- trebuie sa aiba ambele aceeasi dimensiune nu pot fi ambele memorie<br><br>
+
+Efect:<br>
+destinatie = destinatie and sursa<br>
+destinatie = destinatie or sursa<br>
+destinatie = destinatie xor sursa<br>
+destinatie = not destinatie<br><br>
+
+
+Observatie: operatiile de deplasare si de rotire pe biti afecteaza si flagul OF. Pentru mai multe informatii se poate consulta documentatie Norton Guide.<br><br>
+
+
+</body>
+
+</html>
