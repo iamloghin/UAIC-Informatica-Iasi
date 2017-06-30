@@ -1,0 +1,434 @@
+﻿
+Iată câteva posibile rezolvări pentru exercițiile din al treilea laborator:
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+I) Exercițiile cu comenzi înlănțuite:
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.1  Să se scrie comanda care calculează câte conturi de utilizatori (umani) există în sistem. 
+      Suplimentar: filtrați conturile asociate la programe de sistem (i.e., cele care nu au /bin/bash ca shell de login).
+      (Indicație: folosiți comanda wc și informațiile din fișierul /etc/passwd ; pentru partea suplimentară, folosiți comanda grep
+      pentru filtrarea cerută și înlănțuiți-o cu comanda wc.)
+
+grep /bin/bash /etc/passwd | wc -l
+
+Sau, altă soluție doar cu o singură comandă simplă:
+
+grep -c /bin/bash /etc/passwd
+
+
+Suplimentar: dacă dorim doar conturile care sunt asociate la programe de sistem, atunci:
+
+grep -v /bin/bash /etc/passwd | wc -l
+
+sau
+
+grep -v /bin/bash /etc/passwd -c
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.2  Să se scrie comanda care afișează numărul total al utilizatorilor care sunt membri ai grupului studs. 
+      (Indicație: folosiți comanda dintr-un exercițiu din laboratorul precedent, înlănțuită cu comenzile cut și wc, fiecare apelată cu opțiunile adecvate.)
+
+
+O primă idee ar fi să selectăm liniile din /etc/passwd care conțin șablonul "studs" (sau "/fenrir/studs"), plecând de la observația că directorul acasă al
+conturilor de studenți are forma /fenrir/studs/username :
+
+grep studs /etc/passwd | wc -l
+
+Sau, o altă soluție folosind doar o singură comandă simplă:
+
+grep -c studs /etc/passwd 
+
+Numărul afișat de lanțurile de mai sus nu reflectă însă realitatea, lucru de care ne putem convinge dacă înlocuim șablonul "studs" cu șablonul "202",
+plecând de la observația că GID-ul studenților este 202 :
+
+grep 202 /etc/passwd | wc -l
+
+Oare numărul afișat de acest ultim lanț este cel corect? Nu neapărat, pentru că astfel se vor număra și liniile care conțin un UID sau un GID de forma
+3202, 2024, 10202, 12027, etc. (i.e. numere în care 202 apare ca și subcuvânt).
+
+Pentru a elimina astfel de numere, putem forța ca 202 să fie precedat și urmat de caracterul delimitator de câmpuri din /etc/passwd:
+
+grep :202: /etc/passwd | wc -l
+
+Nici acum însă nu avem garanția răspunsului corect, deoarece lanțul de mai sus ar număra și un eventual utilizator cu UID-ul 202 și aflat într-un alt grup.
+
+
+Lanțul care numără corect câți utilizatori sunt în grupul studs de pe serverul fenrir, ignorând toate excepțiile de mai sus, este următorul:
+
+cut -f4 -d: /etc/passwd | grep -w 202 | wc -l
+
+Sau, cu mai puține comenzi simple în lanț, putem scrie:
+
+cut -f4 -d: /etc/passwd | grep -w 202 -c
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.3  Să se scrie comanda care va scrie, în fișierul utilizatori-logati.txt, numele de cont ale tuturor utilizatorilor prezenți în sistem la momentul
+      execuției comenzii, în ordine alfabetică (și unică). 
+      (Indicație: folosiți oricare dintre comenzile who sau finger, înlănțuită cu comanda cut și apoi cu comanda sort, fiecare apelată cu opțiunile
+      adecvate. Alternativ, puteți începe lanțul cu comanda users, caz în care veți avea nevoie și de comanda tr.)
+
+Lanțul ce pornește de la comanda who:
+
+who | cut -f1 -d" " | sort -u -o utilizatori-logati.txt
+
+Lanțul ce pornește de la comanda finger:
+
+finger | grep -v Login | cut -f1 -d" " | sort -u > utilizatori-logati.txt
+
+Aici comanda simpla din lant 'grep -v Login' are rolul de a elimina header-ul afisat de comanda finger.
+Avem insa garantia raspunsului corect? Daca exista si vreo alta linie care contine cuvantul 'Login'?
+O alta solutie este folosirea comenzii tail, cu un argument care sa specifice afisarea tuturor liniilor de la a doua linie pana la final:
+
+finger | tail -n +2 | cut -f1 -d" " | sort -u > utilizatori-logati.txt
+
+
+Lanțul ce începe cu comanda users:
+
+users | tr " " "\n" | sort -u -o utilizatori-logati.txt
+
+
+Notă: o altă idee posibilă, dar care nu funcționează (comenzii cut nu îi "place" newline-ul în string-ul cu care înlocuiește delimitatorul)
+
+users | cut -f1- -d" " --output-delimiter="\n" | sort -u > utilizatori-logati.txt
+
+
+Notă: se poate porni în construcția lanțului și de la comanda ps, alegând în mod convenabil dintre opțiunile ei pe cea care afișează informații
+despre proprietarii proceselor selectate spre afișare:
+
+ps --no-header -a -o user | sort -u
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4  Să se scrie comanda care afișează (în mod unic) toate shell-urile folosite de utilizatorii sistemului. 
+      (Indicație: folosiți înlănțuiri de comenzi simple și informațiile din fișierul /etc/passwd.)
+
+cut -f7 -d: /etc/passwd | sort -u
+
+Sau, cu o comandă suplimentară în lanț:
+
+cut -f7 -d: /etc/passwd | sort | uniq
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.5  Să se scrie comanda care afișează câți dintre utilizatorii sistemului conțin "ana" în numele de cont, dar nu în contextul "diana". 
+      (Indicație: folosiți înlănțuiri de comenzi simple și informațiile din fișierul /etc/passwd.)
+
+cut -d: -f1 /etc/passwd | grep ana | grep -v diana | wc -l
+
+Notă: se poate inversa ordinea celor două grep-uri, obținându-se același rezultat. Însă e mai puțin eficientă o astfel de soluție, ca timp de execuție,
+datorită volumului mai mare de informații care se propagă prin lanțul de comenzi.
+
+
+Sau, un lanț cu o comandă mai puțin:
+
+cut -d: -f1 /etc/passwd | grep ana | grep -v diana -c
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.6  Să se scrie comanda care afișează numărul total de procese (rulate în toate sesiunile deschise) ale utilizatorului cu numele de cont
+      specificat ca parametru al comenzii. 
+      (Indicație: prelucrați rezultatele afișate de comanda ps, apelată cu opțiunile adecvate.)
+
+Folosind sintaxa detaliată a comenzii ps:
+
+ps -U arg_utilizator -o pid= | wc -l
+
+Notă: opțiunea -U a comenzii ps selectează doar procesele rulate de utilizatorul specificat, iar opțiunea -o pid= setează drept coloane de afișare doar
+un singur câmp de informații, ce va lista PID-urile proceselor selectate, și fără o primă linie de header cu denumirile câmpurilor afișate.
+
+Sau, cu un proces grep sau tail pentru a elimina linia de header afișată de ps:
+
+ps -U arg_utilizator | grep -v PID -c
+
+ps -U arg_utilizator | tail -n +2 | wc -l
+
+Sau putem folosi opțiunea --no-headers:
+
+ps --no-headers -U arg_utilizator | wc -l
+
+
+Notă: o altă idee ar mai fi să folosim sintaxa BSD-style a comenzii ps, dar care nu funcționează:
+
+ps axu | grep -c arg_utilizator
+
+Notă: opțiunile ax selectează toate procesele din sistem, ale tuturor utilizatorilor, inclusiv cele fără terminal asociat. Iar opțiunea u afișează o serie
+de coloane de informații, dintre care prima coloană este USER-ul, numai că nu pentru toți utilizatorii afișează username-ul, pentru unii afișează UID-ul,
+astfel încât înlănțuirea cu comanda grep după numele utilizatorului nu funcționează pentru oricine.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Exercițiile suplimentare:
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.7  Să se scrie comanda care afișează numele real, UID-ul și GID-ul pentru toți utilizatorii sistemului, în formatul "UID->GID->Nume Prenume" ,
+      sortați crescător după UID. 
+      (Indicație: folosiți înlănțuiri de comenzi simple și informațiile din fișierul /etc/passwd.)
+
+cut -f3-5 -d: /etc/passwd --output-delimiter="->" | cut -f1 -d, | sort -n
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.8  Să se scrie comanda care afișează data și ora logării și calculatorul de pe care s-a făcut logarea, pentru toate sesiunile deschise,
+      la momentul execuției comenzii, de un utilizator specificat ca argument al comenzii. 
+      (Indicație: folosiți înlănțuiri de comenzi simple, prelucrând informațiile despre utilizatorii conectați la sistem în acel moment.) 
+
+Lanțul ce pornește de la comanda finger:
+
+finger | grep arg_utilizator | cut -b 49-
+
+Lanțul ce pornește de la comanda who:
+
+who | grep arg_utilizator | tr -s " " | cut -d" " -f3-
+
+Observații:
+
+1) Nu merge cu lanțul:  who | grep arg_utilizator | cut -b N-
+   deoarece nu există o valoare unică pentru N, întrucât comanda who produce coloane de dimensiuni inegale;
+
+2) Nu merge cu lanțul:  finger | grep arg_utilizator | tr -s " " | cut -d" " -fN-
+   deoarece nu există o valoare unică pentru N, întrucât numarul de cuvinte din numele real al utilizatorilor este variabil (2, 3 sau 4 cuvinte).
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.9  Să se scrie comanda care afișează ultimii 15 utilizatori conectați la sistem, în funcție de ora conectării, precum și
+      data, ora și stația de la care s-au conectat. 
+      (Indicație: folosiți înlănțuiri de comenzi simple, prelucrând informațiile despre utilizatorii conectați la sistem în acel moment.)
+
+Lanțul ce pornește de la comanda who:
+
+who | tr -s " " | cut -d" " -f1,3-5 | sort -k 2,3 -t " " -r | head -15
+
+Sau un lanț mai scurt, folosind comanda last:
+
+last -15 | cut -c1-8,20-55 | grep -v wtmp
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.10  Să se scrie comanda care afișează pentru fiecare utilizator conectat la sistem, numele de cont, stația de la care s-a conectat și
+       procesul rulat în foreground, în ordinea alfabetică a numelor de cont. 
+       (Indicație: folosiți înlănțuiri de comenzi simple, prelucrând informațiile despre utilizatorii conectați la sistem în acel moment.) 
+
+Un lanț ce pornește de la comanda w (w este singura comandă ce afișează simultan stația de conectare și procesul rulat):
+
+w | grep -vi user | cut -c1-8,17-34,64-
+
+Notă: comanda 'grep -vi user' ne scapă de primele două linii de header afișate de comanda w (aceste linii conțin subcuvântul 'user' în forma
+users pe prima linie, respectiv USER pe a doua linie).
+ 
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.11  Să se scrie comanda care afișează numele de cont și numele real al utilizatorilor conectați la sistem, al căror prenume se termină cu litera 'a'. 
+       (Indicație: folosiți înlănțuiri de comenzi simple, prelucrând informațiile despre utilizatorii conectați la sistem în acel moment.
+       Pentru comanda grep folosiți expresia regulată care exprimă faptul că linia de text se termină cu un anumit șablon.)
+
+Un lanț ce pornește de la comanda finger:
+
+finger -lp | grep Login | grep a$
+
+Observație: nu putem porni lanțul de la comenzile who sau users, căci acestea nu afișeaza și numele real al utilizatorilor conectați la sistem.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.12  Să se scrie comanda care scrie în fișierul a.txt numele de cont ale tuturor utilizatorilor conectați, al căror nume de cont începe cu litera 'a'. 
+       (Indicație: rezolvarea este asemănătoare cu cea a exercițiului precedent.)
+
+Un lanț ce pornește de la comanda who:
+
+who | cut -f1 -d" " | grep ^a > a.txt
+
+Sau, un lanț ce pornește de la comanda finger:
+
+finger | grep -v Login | cut -f1 -d" " | grep ^a >a.txt
+
+Sau, un lanț ce pornește de la comanda users:
+
+users | tr " " "\n" | grep ^a >a.txt
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.13  Să se scrie comanda care afișează toți utilizatorii sistemului care au UID-ul mai mare decât (sau egal cu) 5000. 
+       (Indicație: folosiți înlănțuiri de comenzi simple și informațiile din fișierul /etc/passwd. Pentru a descrie numere mai mari sau egale cu 5000,
+       se poate folosi comanda egrep cu un șablon de tip expresie regulată.)
+
+Începem lanțul cu filtrarea câmpurilor username și UID din /etc/passwd, obținând o coloană de informații de forma username:UID . Apoi trebuie
+prelucrată această coloană, astfel: folosim câmpul UID ca să selectăm doar liniile ce conțin numere mai mari sau egale cu 5000, apoi păstrăm doar
+câmpul username pentru afișarea finală.
+
+Pentru selecția dorită folosim o expresie regulată ca șablon de căutat pentru comanda grep, și anume expresia:
+"caracterul ':', urmat de o cifră de la 5 la 9, iar aceasta urmată de măcar 3 cifre (oarecare)" ,
+asigurându-ne astfel că numărul selectat de expresie va fi mai mare decât sau egal cu 5000:
+
+cut -d: -f1,3 /etc/passwd | grep -E :[5-9][0-9][0-9][0-9] | cut -d: -f1
+
+Sau, echivalent, mai putem scrie:
+
+cut -d: -f1,3 /etc/passwd | grep -E :[5-9][[:digit:]]{3\,} | cut -d: -f1
+
+
+Observație:
+
+Expresiile regulate de mai sus au un neajuns, și anume ele nu selectează și numerele cuprinse între 10000 și 49999 (pe fenrir sunt deja conturi cu UID-uri
+peste 10000), nici pe cele cuprinse între 100000 și 499999, între 1000000 și 4999999, ș.a.m.d.
+Pentru a repara acest neajuns, ne trebuie o expresie regulată de forma:
+"caracterul ':', urmat de o cifră de la 5 la 9, iar aceasta urmată de exact (sau măcar) 3 cifre (oarecare)  SAU  caracterul ':', urmat de o cifră
+de la 1 la 9, iar aceasta urmată de cel puțin 4 cifre (oarecare) " .
+
+Deci soluția completă ar fi următoarea:
+
+cut -d: -f1,3 /etc/passwd | grep -E  :[5-9][0-9][0-9][0-9]\|:[1-9][0-9][0-9][0-9][0-9]  | cut -d: -f1
+
+Sau, echivalent, mai putem scrie:
+
+cut -d: -f1,3 /etc/passwd | grep -E  :[5-9][[:digit:]]{3}\|:[1-9][[:digit:]]{4\,}  | cut -d: -f1
+
+cut -d: -f1,3 /etc/passwd | grep -E  ":[5-9][[:digit:]]{3}|:[1-9][[:digit:]]{4,}"  | cut -d: -f1
+
+Notă: caracterele | și , din expresia regulată trebuie protejate (precedate de \ sau puse între " ") pentru a nu fi interpretate special de către bash.
+
+
+Întrebare suplimentară:
+
+Dacă în loc de limita minimă 5000, ar fi un număr mai "neregulat", adică format din diverse cifre, ce-am putea face?
+
+Spre exemplu, o expresie regulată pentru "... au UID-ul mai mare decât 5432" ar fi următoarea:
+  " :5[4-9][3-9][2-9]|:[6-9][0-9][0-9][0-9]|:[1-9][0-9][0-9][0-9][0-9] "
+sau, echivalent:
+  " :5[4-9][3-9][2-9]|:[6-9][[:digit:]]{3}|:[1-9][[:digit:]]{4,} "
+
+Adică: se selectează numerele cuprinse între 5432 și 5999, sau cele cuprinse între 6000 și 9999, sau toate numerele mai mari decât 10000.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+II) Exercițiul experimental cu fișierele de inițializare a unei sesiuni de lucru :
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Urmând indicația dată, pentru cele 4 situații posibile, ar trebui să ajungeți la următoarea concluzie:
+
+Se execută cel mult un fișier de inițializare, și doar dacă există vreunul!
+Mai exact, în situația când există amândouă, se execută doar scriptul .bash_profile, nu și celălalt.
+
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+III) Exercițiul experimental cu redirectările I/O :
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Urmând indicația dată, comanda dată ca exemplu:
+
+ls -l ~/.bash_profile ~/MailulMeu
+
+când este executată direct, fără nicio redirectare, va produce două linii pe ecran:
+- o linie cu un mesaj de eroare de genul "ls: cannot access ~/MailulMeu: No such file or directory"
+  (linie care de fapt este afișată pe dispozitivul ieșirea de eroare standard);
+- și o linie cu informațiile despre fișierul ~/.bash_profile
+  (linie care de fapt este afișată pe dispozitivul ieșirea normală standard).
+
+Executând această comandă pe rând cu cele 8 forme de redirectare din enunțul exercițiului, verificați în fiecare caz în parte
+dacă fiecare dintre cele 2 linii descrise mai sus apare fie pe ecran, fie în fișier, fie nu apare de loc.
+
+Concluzia la care ar trebui să ajungeți este că ordinea în care apar redirectările în linia de comandă este esențială pentru efectul
+final de la execuția comenzii.
+
+Iar o altă concluzie pe care ar trebui să o trageți este că 4 din cele 8 forme de redirectare sunt incorecte sintactic, adică faptul că
+interpretorul bash nu acceptă o redirectare de forma n>>&m (unde n,m sunt numere naturale).
+
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+IV) Exercițiul cu fișiere de comenzi :
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Să se scrie un script care să listeze toți parametrii din linia de apel sub forma: param_i = valoarea parametrului al i-lea ,
+cu i luând valori de la 1 la numărul total de parametri.
+
+
+a) Prima soluție - folosim o structură for pentru a parcurge lista de parametri, stocată în variabila dinamică $@ :
+
+lab3_ex-sol1.sh :
+=================
+
+#!/bin/bash
+i=0
+for parametru in $@
+do
+  let i=i+1
+  echo "param_$i = $parametru"
+done
+
+
+b) A doua soluție, o variație minoră a primei soluții - folosim cealaltă variabilă dinamică $* și, în plus, operația de incrementare este scrisă altfel :
+
+lab3_ex-sol2.sh :
+=================
+
+#!/bin/bash
+i=0
+for parametru in $*
+do
+  let i++
+  echo "param_$i = $parametru"
+done
+
+
+c) A treia soluție - folosim o idee diferită: comanda internă shift, care deplasează spre stanga cu o poziție toți parametrii $1 $2 ... $9, și
+actualizează în mod corespunzător și variabilele $#, $@ și $* .  Practic, la fiecare iterație facem câte o shift-are și afișăm parametrul curent $1,
+care va fi pe rând parametrul 1, apoi al 2-lea, apoi al 3-lea, ș.a.m.d. din linia de apel inițială. În plus, folosim o structură while în loc de for :
+
+lab3_ex-sol3.sh :
+=================
+
+#!/bin/bash
+i=0
+while test ! $# -eq 0
+do
+  let i+=1
+  echo param_$i = $1
+  shift
+done
+
+
+d) A patra soluție - încercăm o altă idee: putem oare să scriem ceva de forma $$i ? Adică ceva care să producă o dublă substituție ?
+Răspunsul este afirmativ, se poate folosi comanda internă eval (a se vedea exemplul din prezentarea de la curs) în felul următor:
+
+lab3_ex-sol4.sh :
+=================
+
+#!/bin/bash
+i=0
+while test $i -lt $#
+do
+  let i+=1
+  eval p_i=\$$i
+  echo param_$i = $p_i
+done
+
+
+Sau: tot cu efect de dublă substituție se poate folosi o altă formă specială de 'parameter expansion' în shell-ul bash, și anume forma {!variabila} :
+
+lab3_ex-sol5.sh :
+=================
+
+#!/bin/bash
+i=0
+while test $i -lt $#
+do
+  let i+=1
+  echo param_$i = ${!i}
+done
+
+Observați mai sus folosirea construcției ${!i} care are ca efect o dublă substituție: întâi se substituie {!i} cu valoarea variabilei i,
+rezultând un număr k (cuprins între 1 și numărul total de parametri de la apelul scriptului), iar apoi se substituie $k cu valoarea celui
+de-al k-lea parametru de la apelul scriptului.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>

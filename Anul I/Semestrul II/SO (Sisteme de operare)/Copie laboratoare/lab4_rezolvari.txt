@@ -1,0 +1,1206 @@
+﻿
+Iată câteva posibile rezolvări pentru exercițiile din al patrulea laborator:
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.1  Să se scrie un script care să efectueze calculul iterativ al factorialului (i.e. n! = 1 * 2 * ... * n, pentru n > 0).
+      (Indicație: valoarea pentru n se va prelua ca argument din linia de comandă prin care se lansează scriptul,
+      sau se va citi cu comanda read, în caz că nu este dată în linia de comandă.)
+
+Ideea de rezolvare: se folosește o structură repetitivă (for, while sau until) și comenzi pentru calcule aritmetice (let sau expr),
+într-o manieră asemănătoare cu rezolvările date mai jos la exercițiul 4,i).
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.2  Să se scrie un script care să efectueze calculul recursiv al factorialului. 
+      (Indicație: valoarea pentru n se va prelua ca argument din linia de comandă prin care se lansează scriptul, sau se va citi cu comanda read,
+      în caz că nu este dată în linia de comandă.)
+
+Ideea de rezolvare:
+- recursia se poate implementa în două maniere diferite, exemplificate în cele ce urmează: fie prin apel recursiv de funcție, fie prin apel recursiv de script;
+- valoarea intermediară a calculului efectuat în manieră recursivă se poate transmite de la un apel la altul prin mai multe modalități, mai jos sunt ilustrate patru
+dintre acestea: fie prin codul de terminare, fie prin "preluarea", în linia de comandă a apelantului, a valorii afișate pe ecran de apelat, fie printr-o variabilă globală,
+fie printr-un al doilea parametru de apel al funcției/scriptului.
+	
+
+a) Iată o primă soluție, scriem o funcție recursivă și returnăm rezultatul calculat de un apel al funcției prin codul de terminare a procesului:
+
+lab4_ex2a.sh :
+==============
+#!/bin/bash
+## calcul recursiv al factorialului
+
+function factorial()
+{
+    if [ $1 -le 1 ]
+    then
+	return 1
+    else
+	let n_1=$1-1
+	factorial $n_1
+	let rez=$1*$?
+	return $rez
+    fi
+}
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati n: "
+    read n
+else
+    n=$1
+fi
+
+factorial $n
+echo "Factorial($n)=$?"
+
+Observație: comanda return nr provoacă terminarea execuției funcției, cu nr drept cod de terminare. Iar cu variabila specială $? putem afla codul de
+terminare al ultimei comenzi/funcții executate anterior.
+
+Atenție: un apel de funcție în bash nu are aceeași semnificație ca în limbajul C, i.e. nu poate apare ca operand într-o expresie,
+ci poate apare doar în pozițiile în care sunt permise nume de comenzi în cadrul unei linii de comandă, sau al unei linii dintr-un fișier de comenzi.
+Practic, numele funcției este ca un "alias" pentru lista de comenzi din corpul funcției.
+
+Observație: codul de terminare a procesului se reprezintă pe un singur octet, ca atare această soluție nu afișează valorile corecte ale factorialului
+pentru n > 5 (fiindcă apare depășire la octet).
+
+
+b) A doua soluție, folosim ideea cu funcția recursivă de mai sus, dar rezultatul calculat de un apel al funcției îl afișăm pe ecran în corpul funcției
+și îl recuperăm în afara ei prin substituția specială comandă:
+
+lab4_ex2b.sh :
+==============
+#!/bin/bash
+## calcul recursiv al factorialului
+
+function factorial()
+{
+    if [ $1 -le 1 ]
+    then
+	echo 1
+    else
+	let n_1=$1-1
+	rez=`factorial $n_1`
+	expr $1 \* $rez
+    fi
+}
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati n: "
+    read n
+else
+    n=$1
+fi
+
+echo -n "Factorial($n)="
+factorial $n
+
+
+c) A treia soluție, folosim tot o funcție recursivă ca mai sus, dar rezultatul calculat de un apel al funcției îl transmitem la apelul următor
+prin intermediul unui al doilea parametru al funcției:
+
+lab4_ex2c.sh :
+==============
+#!/bin/bash
+## calcul recursiv al factorialului
+
+function factorial()
+{
+    if [ $1 -le 1 ]
+    then
+	echo $2
+    else
+	let n_1=$1-1
+	let prod=$1*$2
+	factorial $n_1 $prod
+    fi
+}
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati n:"
+    read n
+else
+    n=$1
+fi
+
+echo -n "Factorial($n)="
+factorial $n 1
+
+
+d) A patra soluție, tot cu o funcție recursivă, dar rezultatul intermediar calculat de un apel al funcției îl transmitem la apelul următor
+prin intermediul unei variabile (variabila cu numele rez de mai jos):
+
+lab4_ex2d.sh :
+==============
+#!/bin/bash
+## calcul recursiv al factorialului
+
+function factorial()
+{
+echo "----- Begin call : arg fact = $1 -----" 1>&2               # mesaj informativ, afisat pe stderr
+
+    if [ $1 -le 1 ]
+    then
+      rez=1
+    else
+      let n_1=$1-1
+      factorial $n_1
+      let rez=$1*rez
+    fi
+
+echo "----- End call : arg fact = $1 , rez=$rez -----"  1>&2     # mesaj informativ, afisat pe stderr
+}
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati n:"
+    read n
+else
+    n=$1
+fi
+
+factorial $n
+echo "Factorial($n)=$rez"
+
+Observație: cele două comenzi echo "----- ... -----" ce afișează mesaje pe stderr au doar un rol ajutător, pentru a putea observa ordinea apelurilor.
+Pentru a inhiba apariția acestor mesaje, este suficient să rulați acest script cu ieșirea de eroare standard redirectată către fișierul null, adică:
+UNIX> ./lab4_ex2d.sh  nr  2> /dev/null
+
+Similar, puteți adăuga astfel de mesaje ajutătoare și la soluțiile anterioare.
+
+
+
+OBSERVAȚIE: Soluțiile de mai sus folosesc o funcție recursivă, i.e. care se re-apelează. Similar se pot scrie soluții fără a utiliza funcții, în care
+însuși scriptul este cel care se re-apelează.
+
+e) Spre exemplu, iată o rescriere a primei soluții, folosind un apel recursiv al scriptului:
+
+lab4_ex2e.sh :
+==============
+#!/bin/bash
+## calcul recursiv al factorialului
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati n: "
+    read n
+else
+    n=$1
+fi
+
+if [ $n -le 1 ]
+then
+    exit 1
+else
+    let n_1=$n-1
+    bash $0 $n_1  # apelul recursiv al scriptului
+    let rez=$n*$?
+    echo "Factorial($n)=$rez"
+    exit $rez
+fi
+
+Observație: are același dezavantaj ca și prima soluție: codul de terminare a procesului se reprezintă pe un octet, ca atare aceasta soluție nu afișează
+valorile corecte ale factorialului pentru n > 5 (fiindcă apare depășire la octet).
+
+
+f) Iată o rescriere a celei de a doua soluții, folosind un apel recursiv al scriptului:
+
+lab4_ex2f.sh :
+==============
+#!/bin/bash
+## calcul recursiv al factorialului
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati n: "
+    read n
+else
+    n=$1
+fi
+
+if [ $# -ne 2 ]
+then
+    echo -n "Factorial($n)="
+fi
+
+if [ $n -le 1 ]
+then
+    echo 1
+else
+    let n_1=$n-1
+    expr $n \* $(bash $0 $n_1 'rec')   # apelul recursiv al scriptului, in cadrul unei expresii substitutie speciala comanda
+fi
+
+#Obs.: parametrul al doilea 'rec' (poate fi orice) are rolul sa ne indice ca suntem intr-un apel recursiv, pentru a nu afisa si textul "Factorial()="
+
+
+Observație: similar se pot rescrie și celelalte două soluții de mai sus cu funcții recursive, modificându-le în script-uri care se re-apelează recursiv.
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.3  Să se scrie un script care primește ca parametru la linia de comandă un director și care compilează toate fișierele sursă C++ aflate doar în acest
+      director (nu și cele din subdirectoarele lui). Compilarea se realizează în felul următor:  g++ fisier.cpp -o fisier 
+      (Indicație: folosind comanda basename se poate obține numele fișierului fără extensie: basename fisier.cpp .cpp afișează pe stdout doar 'fisier'.)
+
+a) Iată o primă soluție, folosind un șablon de forma *.cpp în lista de cuvinte de la structura for, șablon ce va fi interpretat de bash în modul cunoscut :
+
+lab3_ex3a.sh :
+==============
+
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo "Eroare: parametri insuficienti! Nu ati specificat numele directorului."
+    exit
+fi
+
+if [ ! -d $1 -o ! -r $1  ]
+then
+    echo "Eroare: $1 nu este director, sau nu aveti drept de citire a acestuia!"
+    exit
+fi
+
+for sursa in $1/*.cpp
+do
+    executabil=$1/`basename $sursa .cpp`.exe     # sau: puteti omite sufixul .exe
+    echo Compilam fisierul $sursa obtinand executabilul $executabil (in acelasi director cu sursa) ...
+    g++ $sursa -o $executabil
+done
+
+
+b) A doua soluție, folosind comanda find pentru a genera lista numelor de fișiere sursă C++ din directorul dat ca parametru:
+
+lab3_ex3b.sh :
+==============
+
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo "Eroare: parametri insuficienti! Nu ati specificat numele directorului."
+    exit
+fi
+
+if [ ! -d $1 -o ! -r $1  ]
+then
+    echo "Eroare: $1 nu este director, sau nu aveti drept de citire a acestuia!"
+    exit
+fi
+
+for sursa in `find $1 -maxdepth 1 -name "*.cpp"`
+do
+    baza=`basename $sursa .cpp`
+    dirn=`dirname $sursa`
+    executabil=$dirn"/"$baza
+    echo Compilam fisierul $sursa obtinand executabilul $executabil ...
+    g++ $sursa -o $executabil
+done
+
+Observație: deși exercițiul nu o cerea, pentru a compila toate fișierele aflate în subarborele determinat de directorul dat ca parametru,
+este suficient ca în scriptul de mai sus să eliminăm opțiunea "-maxdepth 1" de la comanda find.
+
+
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+Exerciții suplimentare:
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Câteva exerciții similare cu exercițiul 1 (i.e. scripturi ce calculează diverse valori într-o manieră iterativă).
+
+Ca urmare, se va prezenta doar câte o soluție pentru fiecare dintre ele, cu observația că se pot da diverse soluții echivalente făcând diverse
+modificări logice și/sau sintactice ca în exemplele de soluții date mai jos la exercitiul 4.
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4,i) Să se scrie un script care să efectueze calculul produsului n * m prin adunări repetate (i.e. n * m = n + n + ... + n, de m ori). 
+        (Indicație: valorile pentru n și m se vor prelua ca argumente din linia de comandă prin care se lansează scriptul,
+        sau se vor citi cu comanda read, în caz că nu sunt date în linia de comandă.)
+
+a) Iată o primă soluție, folosind o structură repetitivă for și comanda let pentru calcule aritmetice :
+
+lab4_ex4a.sh :
+==============
+
+#!/bin/bash
+
+if [ $# -lt 1 ]
+then
+    echo -n "Introduceti primul numar: "
+    read n
+else
+    n=$1
+fi
+
+if [ $# -lt 2 ]
+then
+    echo -n "Introduceti al doilea numar: "
+    read m
+else
+    m=$2
+fi
+
+prod=0
+for i in `seq 1 $m`
+do
+    let prod=prod+$n
+done
+
+echo "Rezultatul operatiei $n * $m este: $prod"
+
+
+b) A doua soluție, este o rescriere echivalentă a primei soluții, folosind o structură repetitivă while în loc de for și alte mici diferențe sintactice :
+
+lab4_ex4b.sh :
+==============
+
+#!/bin/bash
+
+if test $# -lt 1
+then
+    echo -n "Introduceti primul numar: " ; read n
+else
+    n=$1
+fi
+
+if test $# -lt 2 ; then echo -n "Introduceti al doilea numar: " ; read m ; else  m=$2 ; fi
+
+prod=0
+k=$m
+while test $k -gt 0
+do
+    let prod=prod+n
+    let k=k-1
+done
+
+echo "Rezultatul operatiei $n * $m este: $prod"
+
+
+c) A treia soluție, este o rescriere echivalentă a soluției anterioare, cu unele mici diferențe sintactice (observați forma scurt-circuitată
+a operatorilor aritmetici de la comenzile let) :
+
+lab4_ex4c.sh :
+==============
+
+#!/bin/bash
+
+if [ $# -lt 1 ] ; then echo -n "Introduceti primul numar: " ; read n ; else n=$1 ; fi
+
+if [ $# -lt 2 ] ; then echo -n "Introduceti al doilea numar: " ; read m ; else m=$2 ; fi
+
+prod=0
+k=$m
+while [ $k -gt 0 ]
+do
+    let prod+=n
+    let k--
+done
+
+echo "Rezultatul operatiei $n * $m este: $prod"
+
+
+d) A patra soluție, este o rescriere echivalentă a soluțiilor anterioare, cu unele mici diferențe sintactice (observați scrierea directă
+a operațiilor aritmetice, fără comenzi let, posibilă datorită declarațiilor de tip întreg pentru variabilele respective) :
+
+lab4_ex4d.sh :
+==============
+
+#!/bin/bash
+
+if test $# -lt 1
+then
+    echo -n "Introduceti primul numar: " ; read n
+else
+    n=$1
+fi
+
+if [ $# -lt 2 ]
+then
+    echo -n "Introduceti al doilea numar: " ; read m
+else
+    m=$2
+fi
+
+declare -i prod
+declare -i k
+
+prod=0
+k=0
+
+while [ $k -lt $m ]
+do
+    prod=prod+$n
+    k=k+1
+done
+
+echo "Rezultatul operatiei $n * $m este: $prod"
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4,ii) Să se scrie un script care să efectueze calculul puterii n la m prin înmulțiri repetate. 
+         (Indicație: valorile pentru n și m se vor prelua ca argumente din linia de comandă prin care se lansează scriptul,
+         sau se vor citi cu comanda read, în caz că nu sunt date în linia de comandă.)
+
+lab4_ex4ii.sh :
+===============
+
+#!/bin/bash
+
+if [ $# -lt 1 ]
+then
+    echo -n "Introduceti baza: "
+    read n
+else
+    n=$1
+fi
+
+if [ $# -lt 2 ]
+then
+    echo -n "Introduceti exponentul (un numar pozitiv): "
+    read m
+else
+    m=$2
+fi
+
+putere=1
+for i in `seq 1 $m`
+do
+    let putere=putere*$n
+done
+
+echo "Rezultatul operatiei $n ^ $m este: $putere"
+
+Observație: putem scrie alte soluții echivalente prin simpla înlocuire a operatorului + cu operatorul * și a inițializării cu 1 în loc de 0
+în celelalte variante de rezolvare a exercițiului 4.i) pe care le-am discutat mai sus.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.5  Să se scrie un script care să calculeze media aritmetică a n numere. 
+      (Indicație: valorile pentru n și pentru cele n numere vor fi preluate ca argumente la linia de comandă prin care se lansează scriptul,
+      sau se vor citi cu comanda read, în caz că nu sunt date în linia de comandă.)
+
+a) Prima soluție, calculul nu este exact (deoarece comanda let lucrează doar cu numere întregi și operatorul / face doar împărțire întreagă):
+
+lab4_ex5a.sh :
+==============
+
+#!/bin/bash
+
+if test $# -eq 0 ; then
+  echo "Eroare: nu ati specificat nici macar un numar" ; exit 1
+fi
+
+ma=0
+
+for i in $*
+do
+    let ma=ma+i
+done
+
+let ma=ma/$#
+
+echo "Media aritmetica (rotunjita la parte intreaga) a numerelor date este: $ma."
+
+
+b) A doua soluție, folosim comanda bc cu opțiunea -l pentru calcule în virgulă mobilă:
+
+lab4_ex5b.sh :
+==============
+
+#!/bin/bash
+
+if test $# -eq 0 ; then
+  echo "Eroare: nu ati specificat nici macar un numar" ; exit 1
+fi
+
+ma=0
+
+for i in $*
+do
+    let ma+=i
+done
+
+echo -n "Media aritmetica a numerelor date este: "
+echo "scale=5 ; $ma/$#" | bc -l
+
+#Observatie: scale=5 defineste variabila scale utilizata de comanda bc pentru a lucra cu numere cu 5 cifre dupa virgula, in acest exemplu.
+
+
+c) A treia soluție, adăugăm la soluția anterioară și citirea numerelor în cazul în care acestea nu se dau în linia de comandă:
+
+lab4_ex5c.sh :
+==============
+
+#!/bin/bash
+
+ma=0
+
+if test $# -eq 0
+then
+    echo -n "Dati lungimea secventei de numere: "
+    read n
+    for i in $(seq 1 $n)
+    do
+        echo -n "Dati al $i-lea numar: "
+        read nr
+        ma=$(echo $ma+$nr | bc)
+    done
+else
+    n=$#
+    for p in $@
+    do
+        ma=$(echo $ma+$p | bc)
+    done
+fi
+
+echo -n "Media aritmetica a numerelor date este: "
+echo "scale=5 ; $ma/$n" | bc -l
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.6  Să se scrie un script care să calculeze valorile minime și maxime ale argumentelor date la linia de comandă. 
+      (Indicație: valorile numerice se vor citi prin comanda read, dacă nu sunt date în linia de comandă.)
+
+a) Prima soluție, minimul și maximul se calculează printr-o singură parcurgere a secvenței de numere:
+
+lab4_ex6a.sh :
+===============
+
+#!/bin/bash
+
+if test $# -eq 0
+then
+    echo "Eroare: nu ati specificat nici macar un numar."
+    exit 1
+fi
+
+min=$1
+max=$1
+
+shift
+
+for p in $@
+do
+    if [ $p -lt $min ] ; then min=$p ; fi
+
+    if [ $p -gt $max ] ; then max=$p ; fi
+done
+
+echo "Minimul secventei de numere date este: $min , iar maximul ei este: $max ."
+
+
+b) A doua soluție, adăugăm la soluția anterioară și citirea numerelor în cazul în care acestea nu se dau în linia de comandă:
+
+lab4_ex6b.sh :
+===============
+
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati lungimea secventei de numere: "
+    read n
+    echo -n "Dati primul numar din secventa: "
+    read k
+    max=$k
+    min=$k
+
+    i=2
+    while [ $i -le $n ]
+    do
+        echo -n "Dati al $i-lea numar din secventa: "
+        read k
+        if [ $k -lt $min ] ; then min=$k ; fi
+        if [ $k -gt $max ] ; then max=$k ; fi
+
+        let i++
+    done
+else
+    min=$1
+    max=$1
+
+    shift
+    for p in $@
+    do
+        if [ $p -lt $min ] ; then min=$p ; fi
+        if [ $p -gt $max ] ; then max=$p ; fi
+    done
+fi
+
+echo "Minimul secventei de numere date este: $min , iar maximul ei este: $max ."
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.7  Să se scrie un script care să calculeze valoarea de rang n din șirul lui Fibonacci. 
+      (Indicație: valoarea pentru n va fi preluată ca argument la linia de comandă prin care se lansează scriptul,
+      sau se va citi prin comanda read, în caz că nu este dată în linia de comandă.)
+
+lab4_ex7.sh :
+==============
+
+#!/bin/bash
+
+## calculeaza fib(n) in maniera iterativa
+
+if [ $# -eq 0 ]
+then 
+    echo -n "Dati rangul termenului sirului lui Fibonacci: " ;  read n
+else
+    n=$1
+fi
+
+if [ $n -eq 1 -o $n -eq 2 ]
+then
+    F=$n
+else
+    F1=1
+    F2=2
+    for i in `seq 3 $n`
+    do
+        let F=$F1+$F2
+        F1=$F2
+        F2=$F
+    done
+fi
+
+echo "Termenul de rang $n din sirul lui Fibonacci este: $F"
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.8  Să se scrie un script care să calculeze valoarea numerică ce apare de cele mai multe ori, precum și numărul ei de apariții, în șirul
+      de valori numerice date ca argumente în linia de comandă. 
+      (Indicație: valorile numerice se vor citi prin comanda read, dacă nu sunt date în linia de comandă.)
+
+Soluție: observați folosirea variabilelor de tip tablou (modul de declarare și de referire la valoarea unui element din tablou) în cele de mai jos:
+
+lab4_ex8.sh :
+=============
+
+#!/bin/bash
+
+declare -a v   # declara v ca fiind un array
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati numarul de numere: "
+    read nr
+    for i in `seq 1 $nr`
+    do
+	echo -n "Dati v[$i]: "
+	read v[$i]
+    done
+else
+    nr=$#
+    for i in `seq 1 $nr`
+    do
+	v[$i]=$1
+	shift
+    done
+fi
+
+declare -a ap
+
+for i in `seq 1 $nr`
+do
+    ap[$i]=0
+done
+
+for i in `seq 1 $nr`
+do
+    for j in `seq 1 $nr`
+    do
+	if [ ${v[i]} -eq ${v[j]} ]
+	then
+	    let ap[$i]+=1
+	fi
+    done
+done
+
+max=${ap[1]}
+index=1
+
+for i in `seq 2 $nr`
+do
+    if [ $max -lt ${ap[$i]} ]
+    then
+	max=${ap[$i]}
+	index=$i
+    fi
+done
+
+echo "Numarul cu cele mai multe aparitii este ${v[$index]} si are ${ap[$index]} aparitii."
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.9  Să se scrie un script care să calculeze C(n,k) (i.e. combinări de n luate câte k). 
+      (Indicație: valorile n și k se vor da ca argumente în linia de comandă prin care se lansează script-ul,
+      sau se vor citi prin comanda read, în caz că nu sunt date în linia de comandă.)
+
+a) Prima soluție, calculul se face pe baza formulei C(n,k) = n! / (k!*(n-k)!)
+
+lab4_ex9a.sh :
+==============
+
+#!/bin/bash
+### calculeaza C(n,k) i.e. combinari de n luate cate k
+
+if [ $# -lt 1 ]
+then
+    echo -n "Dati numarul n: " ; read n
+else
+    n=$1
+fi
+
+if [ $# -lt 2 ]
+then
+    echo -n "Dati numarul k: " ; read k
+else
+    k=$2
+fi
+
+if [ $n -lt $k ]
+then
+    echo "Eroare: $n este mai mic decat $k. Calcul imposibil!"
+    exit 1
+fi
+
+
+function fact ()
+{
+    prod=1
+    for i in `seq 1 $1`
+    do
+	let prod=prod*$i
+    done
+    echo $prod
+}
+
+# urmeaza calculul pe baza formulei C(n,k) = n! / (k!*(n-k)!)
+
+#fact $n
+nfact=`fact $n`
+echo "factorial de $n este $nfact" 1>&2         # mesaj de depanare, afisat pe stderr
+
+#fact $k
+kfact=`fact $k`
+echo "factorial de $k este $kfact" 1>&2         # mesaj de depanare, afisat pe stderr
+
+let n_k=$n-$k
+echo "$n-$k este $n_k" 1>&2                     # mesaj de depanare, afisat pe stderr
+
+#fact $n_k
+n_kfact=`fact $n_k`
+echo "factorial de $n_k este $n_kfact" 1>&2     # mesaj de depanare, afisat pe stderr
+
+numitor=`expr $kfact \* $n_kfact`
+combinatorial=`expr $nfact / $numitor`
+echo "Rezultatul este C($n,$k)=$combinatorial"
+
+
+Observație: pentru a inhiba afișarea pe ecran a mesajelor de depanare (i.e. cele ce afișează rezultatele intermediare),
+scriptul se va lansa în execuție cu fluxul standard pentru ieșirea de eroare redirectat către fișierul null, adică:
+UNIX> ./lab4_ex9a.sh  N  K  2> /dev/null
+
+
+b) A doua soluție, este similară cu prima, doar că am făcut "inline" calculul efectuat de funcția fact() în soluția anterioară:
+
+lab4_ex9b.sh :
+==============
+
+#!/bin/bash
+### calculeaza C(n,k) i.e. combinari de n luate cate k
+
+if [ $# -lt 1 ]
+then
+    echo -n "Dati numarul n: " ; read n
+else
+    n=$1
+fi
+
+if [ $# -lt 2 ]
+then
+    echo -n "Dati numarul k: " ; read k
+else
+    k=$2
+fi
+
+if [ $n -lt $k ]
+then
+    echo "Eroare: $n este mai mic decat $k. Calcul imposibil!"
+    exit 1
+fi
+
+
+# urmeaza calculul pe baza formulei C(n,k) = n! / (k!*(n-k)!)
+
+#fact $n
+nfact=1
+for i in `seq 2 $n`; do let nfact*=$i ; done
+echo "factorial de $n este $nfact" 1>&2          # mesaj de depanare, afisat pe stderr
+
+#fact $k
+kfact=1
+for i in `seq 2 $k`; do let kfact*=$i ; done
+echo "factorial de $k este $kfact" 1>&2         # mesaj de depanare, afisat pe stderr
+
+let n_k=$n-$k
+echo "$n-$k este $n_k" 1>&2                     # mesaj de depanare, afisat pe stderr
+
+#fact $n_k
+n_kfact=1
+for i in `seq 2 $n_k`; do let n_kfact*=$i ; done
+echo "factorial de $n_k este $n_kfact" 1>&2    # mesaj de depanare, afisat pe stderr
+
+numitor=`expr $kfact \* $n_kfact`
+combinatorial=`expr $nfact / $numitor`
+echo "Rezultatul este C($n,$k)=$combinatorial"
+
+
+c) A treia soluție, calculul se face cu un singur ciclu, pe baza formulei n! / (k!*(n-k)!) simplificate:
+
+lab4_ex9c.sh :
+==============
+
+#!/bin/bash
+### calculeaza C(n,k) i.e. combinari de n luate cate k
+
+if [ $# -lt 1 ]
+then
+    echo -n "Dati numarul n: " ; read n
+else
+    n=$1
+fi
+
+if [ $# -lt 2 ]
+then
+    echo -n "Dati numarul k: " ; read k
+else
+    k=$2
+fi
+
+if [ $n -lt $k ]
+then
+    echo "Eroare: $n este mai mic decat $k. Calcul imposibil!"
+    exit 1
+fi
+
+# urmeaza calculul pe baza formulei C(n,k) = n! / (k!*(n-k)!) simplificate = ( (n-k+1)*(n-k+2)*...*n ) / ( 1*2*3*...*k )
+
+declare -i i=1
+declare -i comb=1
+declare -i aux
+
+while test $i -le $k
+do
+    aux=$n-$i+1
+    comb=$comb*$aux/$i
+    i=$i+1
+done
+
+echo "Rezultatul este C($n,$k)=$comb"
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.10  Să se scrie un script care va fi lansat cu 1+N*k+p argumente, unde k și p sunt variabile și necunoscute apriori. Scriptul preia primul argument
+       într-o variabilă N și calculează suma următoarelor argumente luate câte N (deci suma primelor N argumente, apoi a următoarelor N numere ș.a.m.d.,
+       iar dacă la sfârșit rămâne un număr mai mic decât N de argumente, va calcula doar suma acestora), afișând valorile sumelor pe ecran și scriindu-le
+       în același timp într-un fișier output.txt. Dacă este lansat fără nici un parametru, atunci va cere introducerea unei valori numerice N și apoi
+       a altor N valori numerice (presupunem numere întregi), afișând ca rezultat doar această primă sumă. 
+       (Indicație: man expr și help shift.)
+
+lab4_ex10.sh :
+==============
+
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati N: "
+    read N
+    suma=0
+    for i in `seq 1 $N`
+    do
+        echo -n "Dati numarul al $i-lea: "
+        read nr
+        let suma+=nr
+    done
+    echo "Suma celor $N numere este: $suma"
+else
+    N=$1
+    shift
+    j=0
+    echo $N > output.txt  # resetare fisier de output 
+
+    while [ $# -ge $N ]
+    do
+        suma=0
+        let j++
+        for i in `seq 1 $N`
+        do
+            let suma+=$1
+            shift
+        done
+        echo "Suma secventei a $j-a de $N numere este: $suma"
+        echo "Suma secventei a $j-a de $N numere este: $suma" >> output.txt
+    done
+
+    suma=0
+    p=$#
+    for i in `seq 1 $p`
+    do
+	let suma+=$1
+	shift
+    done
+    echo "Suma ultimei secvente (restul de $p numere) este: $suma"
+    echo "Suma ultimei secvente (restul de $p numere) este: $suma" >> output.txt
+fi
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.11  Să se scrie un script care, pentru un utilizator specificat prin UID-ul acestuia dat ca parametru în linia de comandă, să afișeze
+       numele lui real (și nu numele de utilizator), precum și denumirea tuturor grupurilor din care face parte. 
+       (Indicație: pentru a obține informațiile cerute, puteți folosi comanda id și/sau prelucrați fișierele /etc/passwd și /etc/group.)
+
+a) Prima soluție, folosind informațiile din fișierele /etc/passwd și /etc/group :
+
+lab3_ex11a.sh :
+===============
+
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo "Eroare: parametri insuficienti! Nu ati specificat UID-ul."
+    exit
+fi
+
+cuv=":$1:"
+linie=`grep $cuv /etc/passwd`
+if [ $? -eq 0 ]
+then
+    nume_real=`echo $linie | cut -d: -f5 | cut -d, -f1`
+    echo Numele real: $nume_real
+
+    nume_cont=`echo $linie | cut -d: -f1`
+    # echo Numele de cont: $nume_cont
+
+    gid_principal=`echo $linie | cut -d: -f4`
+    grup_principal=`grep :$gid_principal: /etc/group | cut -d: -f1`
+    echo Grupul principal din care face parte: $grup_principal
+
+    grupuri_secundare=`grep -w $nume_cont /etc/group | cut -d: -f1`
+    echo Grupurile secundare de care apartine: $grupuri_secundare
+else
+    echo Eroare: nu exista nici un utilizator avand $1 drept UID.
+fi
+
+Observați faptul că valorile numerice nnn pentru UID și GID le căutăm cu șabloane de forma :nnn: , deoarece altfel dacă am folosi ca șablon
+doar nnn comanda grep ar putea selecta și alte linii de text, și anume cele în care nnn apare ca subcuvânt într-o secvență mai lungă de cifre.
+Iar numele de cont îl căutăm cu grep -w din același motiv, fără opțiunea -w comanda grep ar putea selecta și alte linii de text, și anume
+acelea în care numele de cont apare ca subcuvânt într-un cuvânt mai lung.
+
+
+b) A doua soluție, este o rescriere echivalentă a primei soluții, fără a mai folosi variabile pentru stocarea rezultatelor intermediare :
+
+lab3_ex11b.sh :
+===============
+
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo "Eroare: parametri insuficienti! Nu ati specificat UID-ul."
+    exit
+fi
+
+grep ":$1:" /etc/passwd  >/dev/null
+if [ $? -eq 0 ]
+then
+    echo -n Numele real:
+    grep ":$1:" /etc/passwd | cut -d: -f5 | cut -d, -f1
+
+    # echo -n Numele de cont:
+    # grep ":$1:" /etc/passwd | cut -d: -f1
+
+    echo -n Grupul principal din care face parte:
+    grep :`grep ":$1:" /etc/passwd | cut -d: -f4`:  /etc/group | cut -d: -f1
+
+    echo -n Grupurile secundare de care apartine:
+    grep -w `grep ":$1:" /etc/passwd | cut -d: -f1` /etc/group | cut -d: -f1
+else
+    echo Eroare: nu exista nici un utilizator avand $1 drept UID.
+fi
+
+
+c) A treia soluție, este o altă rescriere echivalentă a primei soluții, dar de data aceasta folosim comanda id în locul fișierului /etc/group :
+
+lab3_ex11c.sh :
+===============
+
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo "Eroare: parametri insuficienti! Nu ati specificat UID-ul."
+    exit
+fi
+
+cuv=":$1:"
+linie=`grep $cuv /etc/passwd`
+if [ $? -eq 0 ]
+then
+    nume_real=`echo $linie | cut -d: -f5 | cut -d, -f1`
+    echo Numele real: $nume_real
+
+    nume_cont=`echo $linie | cut -d: -f1`
+    # echo Numele de cont: $nume_cont
+
+    echo -n Grupurile din care face parte:
+    id -Gn $nume_cont
+else
+    echo Eroare: nu exista nici un utilizator avand $1 drept UID.
+fi
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.12  Să se scrie un script care să afișeze care dintre utilizatorii ce sunt studenți și al căror nume de cont începe cu o literă dată,
+       au pagini web pe serverul fenrir. 
+       (Indicație: testați existența și vizibilitatea pentru toată lumea a unuia dintre fișierele index.htm sau index.html sau index.php,
+       ce ar trebui să se afle în subdirectorul html din directorul home al utilizatorului ce are pagină web.)
+
+a) O primă idee de rezolvare: generăm lista numelor de conturi student (vezi un exercițiu din laboratorul precedent) și o filtrăm după prima literă,
+apoi ne "uităm" (i.e. testăm) dacă avem drept de citire în directorul html al fiecăruia pentru cel puțin unul dintre fișierele specificate.
+
+lab4_ex12a.sh :
+===============
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati prima litera a numelor: "  ;  read litera
+else
+    litera=$1
+fi
+
+lista=` grep :202: /etc/passwd | grep ^$litera | cut -f1 -d: `
+
+for user in $lista
+do
+    dir_html_user=/fenrir/studs/$user/html
+
+    if test -r $dir_html_user/index.html -o -r $dir_html_user/index.htm -o -r $dir_html_user/index.php
+    then
+	echo $user are pagina web "(accesibila la adresa http://students.info.uaic.ro/~"$user" )."
+    fi
+done
+
+Observație importantă: această soluție va afișa un număr redus de studenți cu pagina web, deși majoritatea studenților aveți pagină web.
+Explicația constă în faptul că acest script verifică dacă studentul X (cel care rulează scriptul) are acces la acele fișiere index ale
+fiecărui student Y și afișează numele lui Y în caz afirmativ. Numai că X și Y sunt colegi în grupul studs, iar a avea pagină web înseamnă
+a avea unul din acele fișiere index accesibil pentru serverul HTTP Apache, care este un program ce rulează ca root, deci intră în categoria
+others pentru drepturile specificate de Y pe fișierele sale index. Cu alte cuvinte, orice student Y care și-a setat drepturi de forma 604 pe
+fișierul index.{html,htm,php} , va avea acel fișier accesibil serverului HTTP Apache, dar nu și colegilor de grup. 
+
+
+b) A doua idee de rezolvare: încercăm să testăm cu find ... -perm ... dacă vreunul dintre acele fișiere index are drept de citire pentru
+others (și prin urmare va fi accesibil serverului HTTP Apache), indiferent dacă colegii de grup au sau nu drept de citire.
+
+lab4_ex12b.sh :
+===============
+
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati prima litera a numelor: "  ;  read litera
+else
+    litera=$1
+fi
+
+lista=` grep :202: /etc/passwd | grep ^$litera | cut -f1 -d: `
+
+for user in $lista
+do
+    dir_html_user=/fenrir/studs/$user/html
+
+    if test -x $dir_html_user
+    then
+	find $dir_html_user -maxdepth 1 \( -name "index.html" -o -name "index.htm" -o -name "index.php" \) -perm /o+r  \
+	    -exec echo $user are pagina web \{} "(accesibila la adresa http://students.info.uaic.ro/~"$user" )." \;  2>/dev/null
+    else
+	if test `id -g` -eq `id -g $user`
+	then
+            # Nota: fiind colegi de grup si neavand drept de acces la directorul html al lui $user,
+            #       nu se poate determina daca serverul HTTP are drept de acces
+            echo "Nu pot determina daca $user are sau nu pagina web."
+#	else
+#	    echo $user nu are pagina web.
+	fi
+    fi
+done
+
+Observație importantă: deci nici această soluție nu ne oferă lista completă a studenților care au pagină web, și anume pentru acei studenți Y
+care și-au setat drepturi de forma 701 pe directorul home și/sau pe subdirectorul html, orice comandă (test ..., find ..., stat ..., ș.a.)
+ar incerca să folosească studentul X, comanda nu va putea accesa fișierul index pentru a-i putea testa drepturile de acces sau existența.
+
+Concluzie: drepturile de acces la fișiere reprezintă un mecanism important de protecție, ce garantează "filtrarea" acceselor (i.e. permiterea
+doar a unora dintre ele și interzicerea altora) la un fișier în conformitate cu dorințele proprietarului.
+
+În cazul de față, pentru a putea totuși "vedea" existența paginilor "ascunse" ale acelor studenți care au interzis accesul pentru colegii
+de grup, dar l-au lăsat permis pentru others ca să fie accesibil serverului HTTP Apache, soluția este următoarea:
+
+
+c) A treia idee de rezolvare: studentul X încearcă să acceseze paginile studentului Y nu prin diverse comenzi rulate avându-l drept proprietar
+al procesului, ci printr-o comandă care rulează în numele unui cont de sistem, de exemplu, deci care nu se încadrează în colegii de grup ai lui Y.
+
+O posibilă astfel de comandă este invocarea tocmai a serverului HTTP Apache, ce rulează ca root. Invocarea se poate face printr-un browser în mod
+text, care va rula în numele lui X, și-i va cere serverului HTTP Apache să-i livreze continuțul paginii de la adresa http specificată în browser.
+Fișierul propriu-zis al acelei pagini va fi accesat în sistemul de fișiere nu de către procesul browser rulat de studentul X, ci de către procesul
+server HTTP Apache, și astfel putem "vedea" paginile web dacă există (și aceasta, în mod evident, fără a încălca drepturile de acces specificate
+de proprietarii paginilor web, pentru situațiile amintite mai sus).
+
+lab4_ex12c.sh :
+===============
+
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati prima litera a numelor: "  ;  read litera
+else
+    litera=$1
+fi
+
+lista=` grep :202: /etc/passwd | grep ^$litera | cut -f1 -d: `
+
+for user in $lista
+do
+    adr_http_user="http://students.info.uaic.ro/~"$user
+    HtmlNotFound=` links -dump $adr_http_user/index.html | grep -c "Error 404" `
+    HtmNotFound=` links -dump $adr_http_user/index.htm | grep -c "Error 404" `
+    PhpNotFound=` links -dump $adr_http_user/index.php | grep -c "Error 404" `
+
+    if test $HtmlNotFound -eq 0 -o $HtmNotFound -eq 0 -o $PhpNotFound -eq 0
+    then
+	echo $user are pagina web "(accesibila la adresa http://students.info.uaic.ro/~"$user" )."
+    else
+	echo $user nu are pagina web.
+    fi
+done
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>

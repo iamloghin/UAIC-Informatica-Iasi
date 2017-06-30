@@ -1,0 +1,164 @@
+﻿
+Iată câteva posibile rezolvări pentru exercițiile din al doilea laborator:
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.1  Să se scrie comanda care să parcurgă recursiv directorul dat ca argument și să afișeze permisiunile tuturor fișierelor și subdirectoarelor întâlnite.
+      (Indicație: folosiți comanda find și cu acțiunea de apelare a comenzii stat, sau acțiunea echivalentă de afișare cu format.)
+
+Soluții cu acțiunea de afișare cu format:
+
+find arg_director -printf "%m : %p\n"                           (specificatorul %m : afișează permisiunile în octal)
+
+find arg_director -printf %M\ :\ %p\\n                          (specificatorul %M : afișează permisiunile în notație simbolică)
+
+Sau, cu acțiunea generală -exec pentru a apela comanda stat:
+
+find arg_director -exec stat --format="%a %n" \{} \;            (specificatorul %a : afișează permisiunile în octal)
+
+find arg_director -exec stat --format="%A %n" \{} \;            (specificatorul %A : afișează permisiunile în notație simbolică)
+
+Observație: atenție la cuvântul care descrie formatul, nu trebuie să conțină spații neprotejate!
+(Doarece doar primul cuvânt ce urmează după -printf se ia în considerare ca valoare pentru acțiunea -printf, și similar la comanda stat.)
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.2  Să se scrie comanda ce afișează pentru toate fișierele din directorul dat ca argument în linia de comandă, fișiere ale căror nume încep sau
+      se termină cu litera 'a', următoarele proprietăți: numele fișierului, data ultimei modificări și dimensiunea fișierului în Kbytes.
+      (Indicație: folosiți comanda find și cu opțiunea de combinare alternativă a mai multor criterii de căutare după nume, iar la partea de acțiuni
+      cu opțiunea -printf cu parametrii adecvați.)
+
+find arg_director -name "a*" -printf "%p : %t : %k KB\n" -or -name "*a" -printf "%p : %t : %k KB\n"
+
+Sau, mai condensat, prin forțarea precedenței de evaluare a opțiunilor folosind paranteze:
+
+find arg_director \( -name "a*" -o -name "*a" \) -printf "%p : %t : %k KB\n"
+
+Observații:
+
+1) Operatorul -o sau -or se folosește pentru a combina mai multe criterii de căutare ce trebuie satisfăcute disjunctiv (i.e., nu trebuie ca
+toate să fie adevărate simultan, ci doar cel puțin unul dintre ele trebuie să fie adevărat).
+
+2) Folosind parantezele se pot grupa mai multe criterii de căutare pentru a specifica o singură dată, în afara parantezelor, acțiunea de efectuat.
+
+3) Atenție la caracterele speciale * { } ; ( ) ce trebuie protejate ca să fie citite ca atare de comanda find (altfel, neprotejate, le interpretează
+interpretorul bash înainte de a executa comanda find, conform semnificației speciale pe care o au - vezi detalii despre aceasta la cursuri).
+(Notă: în cazul caracterului * , acesta va rămâne neschimbat în urma interpretării de către bash numai dacă acesta nu identifică nici un fișier care
+să se potrivească cu șablonul în care apare folosit caracterul *).
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.3  Să se scrie comanda care să sorteze descrescător liniile de text din /etc/passwd, iar rezultatul sortării să fie salvat în fișierul output.txt.
+      (Indicație: folosiți comanda sort cu cele două opțiuni corespunzătoare cerințelor din enunț.)
+
+sort -r /etc/passwd -o output.txt
+
+Sau, alte combinații posibile de specificare a parametrilor (vezi observația de după Ex.1 din laboratorul #1):
+
+sort /etc/passwd -r -o output.txt
+
+sort /etc/passwd -o output.txt -r
+
+sort -r -o output.txt /etc/passwd
+
+... ș.am.d., dar NU și formele: sort /etc/passwd -o -r output.txt  SAU  sort -r -o /etc/passwd output.txt
+
+O altă soluție, mai generală, presupunând că sort nu ar fi avut opțiunea -o: putem folosi redirectarea ieșirii normale standard:
+
+sort -r /etc/passwd > output.txt
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4  Să se scrie comanda care să sorteze crescător după UID liniile de text din fișierul /etc/passwd.
+      (Indicație: folosiți comanda sort cu trei opțiuni: opțiunea pentru sortare numerică, opțiunea pentru sortare după cheia câmpul 3 și
+      opțiunea pentru stabilirea separatorului dintre câmpuri.)
+
+sort -n -t: -k3 /etc/passwd
+
+Sau, alte combinații posibile de specificare a parametrilor:
+
+sort /etc/passwd -t: -k3 -n
+
+sort --numeric-sort /etc/passwd --key=3 -t :
+
+... ș.am.d.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+Exercițiile suplimentare:
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.5  Să se scrie comanda ce afișează toate fișierele și directoarele, precum și drepturile de acces asociate acestora, 
+      aflate în directorul dat ca argument în linia de comandă, pentru care grupul proprietarului are drepturi de citire și de execuție.
+
+find arg_director -perm -g+rx -printf "%p : %m\n"
+
+De data aceasta nu putem folosi și forma:  find arg_director -perm /g+rx -printf "%p : %m\n"
+Notă: această formă era cea corectă dacă în enunț s-ar fi cerut ca grupul proprietarului să aibă drepturi de citire SAU de execuție (în loc de ȘI).
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.6  Să se scrie comanda ce afișează toate fișierele de tip normal (i.e., fișiere obișnuite) pe care le dețineți în cont și
+      care au fost modificate în ultima săptămână, împreună cu drepturile de acces și data ultimei modificări.
+
+find ~ -type f -mtime -7 -printf "%p : %m : %t\n"
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.7  Să se scrie comanda ce afișează toate fișierele găsite începând din directorul dat ca argument în linia de comandă, parcurs recursiv,
+      pentru care proprietarul fișierului are drept de execuție asupra sa, precum și data ultimei accesări a fișierului și dimensiunea sa în Kbytes.
+
+find arg_director -perm /u+x -type f -printf "%p : %a : %k KB\n"
+
+find arg_director -perm -u+x -type f -printf "%p : %a : %k KB\n"
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.8  Să se scrie comanda care să afișeze toate programele sursă C/C++ (i.e., fișierele cu extensiile .c, .cpp și .h)
+      pe care le dețineți în cont, împreună cu lungimile lor (i.e., dimensiunile lor în octeți) și data ultimei modificări.
+      (Indicație: folosiți comanda find cu trei opțiuni -name la criteriul de căutare, iar la partea de acțiuni cu opțiunea -printf cu parametrii adecvați.
+      Pentru a testa comanda, creați câteva fișiere C/C++ în directorul home, eventual prin copierea unor exemple de programe de la laboratoarele
+      de programare din primul semestru.)
+
+find ~ \( -name "*.c" -o -name "*.cpp" -or -name "*.h" \) -printf "%p : %s bytes : %t\n"
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.9  Să se scrie comanda care identifică toate programele sursă C++ (i.e., fișierele cu extensia .cpp) pe care le dețineti (doar) în
+      directorul home și, dacă dimensiunea acestora este mai mică de 5 Kbytes, încearcă să le compileze folosind comanda g++.
+      Ieșirea de eroare standard pentru comanda de compilare va fi redirectată către un fișier errors.txt.
+      (Indicație: folosiți comanda find cu opțiunile -name și -size la criteriul de căutare, iar la partea de acțiuni cu opțiunea de execuție
+      -exec g++ ... 2>> errors.txt . Pentru a testa comanda, creați câteva fișiere C++ în directorul home, eventual prin copierea unor exemple
+      de programe de la laboratoarele de programare din primul semestru.)
+
+find ~ -maxdepth 1 -name "*.cpp" -size -5k -exec g++ \{} 2>> errors.txt \;
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.10  Să se scrie comanda ce afișează toate fișierele pagini web (i.e., fișierele cu extensiile .htm, .html, .php, .css) pe care le dețineți în cont,
+       împreună cu lungimile lor (i.e., dimensiunile lor în Kbytes) și data ultimei modificări.
+
+find ~/html \( -name "*.htm" -o -name "*.html" -or -name "*.php" -o -name "*.css" \) -printf "%p : %k KB : %t\n"
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.11  Să se scrie comanda care șterge toate fișierele temporare din cont (i.e. din directorul home, și inclusiv pe cele din subdirectoarele acestuia).
+       Explicație: fișierele temporare sunt cele ale căror nume se termină cu ~ sau cu .bak . Acestea sunt fișiere create de diverse editoare de text în
+       care se salvează penultima versiune, i.e. cea de dinainea ultimei editări, a fișierului original (i.e. fișierul cu numele respectiv fără ~ sau .bak).
+       (Indicație: folosiți comanda find și cu acțiunea de apelare a comenzii rm, sau acțiunea echivalentă de ștergere.)
+
+Soluții cu acțiunea de ștergere:
+
+find ~ -name "*.bak" -delete -o -name "*~" -delete
+
+find ~ \( -name \*.bak -or -name \*~ \) -delete
+
+Sau, cu acțiunea generală -exec pentru a apela comanda rm:
+
+find ~ "(" -name "*.bak" -o -name "*~" ")" -exec rm "{}" ";"
+
+find ~ \( -name \*.bak -o -name \*~ \) -exec rm \{} \;
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>

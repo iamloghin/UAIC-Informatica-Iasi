@@ -1,0 +1,266 @@
+Iata posibile rezolvari pentru cateva dintre exercitiile din laboratorul al 14-lea:
+
+<!------------------------------------------------------------------------------------------------------------------------>
+
+1. Sa se scrie un program C care, rulat in background, afiseaza in mod periodic (e.g., din 20 in 20 secunde) continutul fisierului
+remember.txt (se va crea la inceput un fisier cu acest nume si un continut oarecare). In plus, ori de cate ori programul va primi
+semnalul SIGUSR1, va executa comanda finger -p, iar la primirea semnalului SIGINT programul isi va incheia executia si va afisa
+un text cu un mesaj de terminare. 
+(Indicatie: pentru afisarea periodica, se poate trata semnalul SIGALRM, generat cu apelul alarm() ce seteaza o alarma de ceas.)
+
+Ideea de rezolvare: trebuie tratate cele 3 semnale indicate in enunt; la executie veti genera aceste 3 tipuri de semnale in felul
+urmator: semnalul SIGINT il generati apasand tastele CTRL+C atunci cand programul ruleaza in foreground (sau il puteti genera
+cu comanda kill); semnalul SIGUSR1 il puteti genera doar explicit, cu o comanda kill executata dintr-un alt shell (sau din acelasi
+shell, daca porniti programul in background); iar semnalul SIGALRM va fi generat prin program folosind apeluri alarm().
+Iata deci o posibila solutie:
+
+lab14_ex1.c :
+=============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <fcntl.h>
+
+void handle_sigint(int nr_sem)
+{
+    printf("S-a terminat executia procesului.\n");
+    exit(0);
+}
+
+void handle_sigusr1(int nr_sem)
+{
+    system("finger -p");
+}
+
+void handle_sigalrm(int nr_sem)
+{
+    int fd,cod_r;
+    char ch;
+
+    if(-1 == (fd=open("remember.txt",O_RDONLY)) )
+    {
+	perror("Eroare la deschiderea fisierului remembr.txt");
+	exit(1);
+    }
+
+    printf("Remember:\n");
+    do{
+	if(-1 == (cod_r = read(fd,&ch,sizeof(char))) )
+        {
+            perror("Eroare la citirea din fisier");
+            exit(2);
+        }
+	if(cod_r == 1) /* daca a citit cu succes un octet, il afisam */
+	{
+	    printf("%c",ch);
+            fflush(stdout);
+        }
+    }while(cod_r !=0);   /* until EOF */
+    printf("\n");
+
+    close(fd);
+}
+
+
+int main()
+{
+    /* mai intai atasam handler-ele pentru cele 3 semnale pe care vrem sa le tratam in program */
+    signal( SIGINT, handle_sigint);
+    signal(SIGUSR1, handle_sigusr1);
+    signal(SIGALRM, handle_sigalrm);
+    
+    while(1)
+    {
+	alarm(20); /* setam alarma peste 20 secunde */
+        pause();   /* suspendam executia pana la primirea semnalului urmator */
+    }
+
+    return 0;
+}
+
+<!------------------------------------------------------------------------------------------------------------------------>
+
+2. [Hi-ho v2, cu semnale] Sa se rescrie programele hi.c si ho.c de la exercitiul [Hi-ho] din laboratorul precedent, folosind
+semnale in loc de canale fifo pentru a realiza sincronizarile necesare.
+
+Ideea de rezolvare: notificarile ce trebuie trimise intre cele 2 procese, ce erau realizate prin transmiterea de mesaje prin
+2 fifo-uri la exercitiul [Hi-ho] din laboratorul precedent, vor fi acum transmise prin semnale de tip SIGUSR1 (sau SIGUSR2).
+In plus, fiecare proces trebuie sa cunoasca PID-ul celuilalt proces pentru a-i putea trimite un semnal. Ca atare, trebuie
+solutionata si aceasta problema, de e.g. fiecare proces isi va comunica PID-ul propriu celuilalt proces folosind 2 canale fifo.
+Cum scopul acestui exercitiu este deprinderea folosirii semnalelor, si nu a comunicatiei prin fifo-uri, vom simplifica solutia,
+in sensul ca cele 2 procese nu vor mai fi separate, ci inrudite prin fork(), unul va fi fiul celuilalt, si astfel fiecare va
+cunoaste PID-ul celuilalt. In continuare ne vom indrepta atentia asupra folosirii corecte a semnalelor pentru a implementa
+modelul de sincronizare cerut in enuntul problemei.
+
+a) Iata o prima rezolvare: fiecare proces trimite celuilalt un semnal SIGUSR1 prin cerere explicita cu un apel kill(), si asteapta
+primirea semnalului de la celalalt proces cu un apel pause(), ce cauzeaza suspendarea executiei pana la receptia unui semnal :
+
+lab14_ex2a.c :
+==============
+
+#include <unistd.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#define NR_AFISARI 100  /* cate perechi hi-ho se doreste a fi afisate */
+
+void handler_sigusr1(int nr_sem)
+{
+    fprintf(stderr,"Debug: procesul cu PID-ul %d a primit semnal.\n",getpid());
+    /* acesta e un mesaj cu rol de debugging; se poate "ignora" la executie prin redirectare:
+       UNIX>  ./a.out 2> /dev/null
+    */
+}
+
+int main()
+{
+    int pid,i;
+
+    if(SIG_ERR == signal(SIGUSR1,handler_sigusr1) )
+    {
+	perror("Eroare la signal");
+	exit(1);
+    }
+    
+    if(-1 == (pid=fork()) )
+    {
+	perror("Eroare la fork");
+	exit(2);
+    }
+
+    if(pid != 0)
+    { /* tatal : responsabil cu hi-urile */
+	for(i=0; i<NR_AFISARI; i++)
+	{
+	    printf("hi-"); fflush(stdout);  /* afisare HI */
+
+	    kill(pid,SIGUSR1);              /* trimit notificare catre celalalt proces */
+
+	    pause();                        /* astept notificarea de la celalalt proces */
+	}
+    }
+    else
+    { /* fiul : responsabil cu ho-urile */
+	for(i=0; i<NR_AFISARI; i++)
+	{
+	    pause();                         /* astept notificarea de la celalalt proces */
+
+	    printf("ho, "); fflush(stdout);  /* afisare HO */
+
+	    kill(getppid(),SIGUSR1);         /* trimit notificare catre celalalt proces */
+	}
+        printf("\nSfarsit.\n");
+    }
+    
+    return 0;
+}
+
+Observatie:
+Repetand executia programului de un numar suficient de ori, veti observa ca uneori afiseaza corect cele 100 de perechi hi-ho,
+iar alteori se blocheaza inainte de a termina de afisat cele 100 de perechi.
+Explicatia e urmatoarea: acele situatii de blocare apar atunci cand unul dintre cele 2 procese primeste semnalul corespunzator
+unei iteratii a buclei inainte de a fi executat apelul pause() corespunzator acelei iteratii. Cu alte cuvinte, atunci cand
+un semnal ii este livrat procesului inainte ca acesta sa fi inceput asteptarea corespunzatoare acelui semnal.
+Un exemplu de astfel de situatie:
+daca procesul HI isi termina cuanta de timp procesor alocata dupa ce a executat kill(), dar inainte de a executa pause(),
+atunci se va continua cu o noua cuanta pentru procesul HO in care: i se livreaza semnalul, isi afiseaza mesajul, trimite
+semnalul catre procesul HI si apoi isi suspenda executia prin pause(), dupa care cand procesul HI primeste o noua cuanta de
+executie i se va livra semnalul, apoi executa apelul pause() si astfel isi suspenda executia, moment in care ambele procese
+sunt suspendate si nici unul nu va putea deci sa trimita semnal pentru a-l "trezi" pe celalalt.
+
+
+b) A doua idee de rezolvare: singura modalitate eficienta in 100% din situatiile posibile este aceea de a garanta ca un semnal
+nu-i este livrat procesului inainte ca acesta sa fi inceput asteptarea acelui semnal. Acest lucru se poate realiza doar prin
+blocarea primirii semnalului (cand se va genera un semnal pentru acel proces, el nu-i va fi livrat imediat, ci va sta in
+coada de semnale din sistem ce asteapta sa fie livrate, pana cand acel proces va debloca primirea acelui semnal).
+Concret, vom bloca primirea semnalului SIGUSR1 la inceputul executiei proceselor HI si HO, iar apoi in buclele din cele doua
+procese vom realiza asteptarea semnalului printr-un apel sigsuspend() cu un parametru care va indica asteptarea semnalului
+SIGUSR1; corectitudinea solutiei abordate se bazeaza esential pe comportamentul functiei sigsuspend(): ea inlocuieste masca
+curenta de semnale blocate cu cea primita ca parametru, apoi suspenda executia pana la primirea unui semnal din masca data
+ca parametru, iar la final reface masca initiala de semnale blocate.
+
+lab14_ex2b.c :
+==============
+
+#include <unistd.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#define NR_AFISARI 100
+
+void handler_sigusr1(int nr_sem)
+{
+    fprintf(stderr,"Debug: procesul cu PID-ul %d a primit semnal.\n",getpid());
+    /* acesta e un mesaj cu rol de debugging; se poate "ignora" la executie prin redirectare:
+       UNIX>  ./a.out 2> /dev/null
+    */
+}
+
+int main()
+{
+    int pid,i;
+    sigset_t masca_semnale_usr1_blocat, masca_semnale_usr1_deblocat;
+
+    sigemptyset(&masca_semnale_usr1_blocat);
+    sigaddset(&masca_semnale_usr1_blocat,SIGUSR1);
+
+    sigfillset(&masca_semnale_usr1_deblocat);
+    sigdelset(&masca_semnale_usr1_deblocat,SIGUSR1);
+
+    if(SIG_ERR == signal(SIGUSR1,handler_sigusr1) )
+    {
+	perror("Eroare la signal");
+	exit(1);
+    }
+
+    if(-1 == sigprocmask(SIG_BLOCK,&masca_semnale_usr1_blocat,NULL) )
+    {
+	perror("Eroare la sigprocmask");
+	exit(2);
+    }
+    
+    if(-1 == (pid=fork()) )
+    {
+	perror("Eroare la fork");
+	exit(3);
+    }
+
+    if(pid == 0)
+    { /* fiul : responsabil cu hi-urile */
+	for(i=0; i<NR_AFISARI; i++)
+	{
+	    printf("hi-"); fflush(stdout);             /* afisare HI */
+
+	    kill(getppid(),SIGUSR1);                   /* trimit notificare catre celalalt proces */
+
+	    sigsuspend(&masca_semnale_usr1_deblocat);  /* astept notificarea de la celalalt proces */
+	}
+    }
+    else
+    { /* tatal : responsabil cu ho-urile */
+	for(i=0; i<NR_AFISARI; i++)
+	{
+	    sigsuspend(&masca_semnale_usr1_deblocat);  /* astept notificarea de la celalalt proces */
+
+	    printf("ho, "); fflush(stdout);            /* afisare HO */
+
+	    kill(pid,SIGUSR1);                         /* trimit notificare catre celalalt proces */
+	}
+        printf("\nSfarsit.\n");
+    }
+    
+    return 0;
+}
+
+Observatie:
+Conform celor explicate anterior, puteti vedea din program ca procesele au blocata primirea semnalelor SIGUSR1
+pe toata durata de executie a buclelor de afisare, exceptand intervalele de timp consumate de apelurile sigsuspend()
+din aceste bucle, intervale in care primirea unui semnal SIGUSR1 este permisa, si mai mult, este asteptata oricat
+este nevoie (i.e. apelul sigsuspend() provoaca suspendarea executiei programului pana la primirea unui astfel de semnal).
+
+<!------------------------------------------------------------------------------------------------------------------------>
+

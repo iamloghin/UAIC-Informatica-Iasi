@@ -1,0 +1,941 @@
+﻿
+Iată câteva posibile rezolvări pentru exercițiile din laboratorul al 7-lea:
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.1  Să se scrie un program C care primește de la linia de comandă numele unui fișier și afișează numărul de apariții pentru fiecare caracter
+      ce apare în acel fișier. 
+      (Indicație: printr-o singură parcurgere a fișierului, calculați de câte ori apare fiecare caracter ASCII posibil, i.e. orice octet cuprins
+      între 0 și 255.)
+
+
+a) Prima soluție: un program în care folosim apelurile de sistem (open, read, ș.a.) pentru prelucrarea fișierului.
+Observați cum tratăm toate cazurile de erori/excepții posibile să apară la execuția programului.
+
+lab7_ex1a.c :
+=============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdlib.h>
+
+#define ASCII_SIZE 256
+
+int main (int argc, char* argv[])
+{
+    int file;
+    int count[ASCII_SIZE];
+    unsigned char ch;
+    int i,r;
+    
+    if(argc == 1)
+    {
+        fprintf(stderr,"Argumente insuficiente!");
+        exit(1);
+    }
+
+    for(i = 0; i < ASCII_SIZE; i++)
+        count[i] = 0;
+    
+    file=open(argv[1], O_RDONLY);
+    if(file == -1)
+    {
+        perror("Eroare la deschidere");
+        exit(2);
+    }
+
+    while(1)
+    {
+        r = read(file, &ch, 1);
+        if(r == -1)
+        {
+            perror("Eroare la citire");
+            exit(3);
+        }
+        if(r == 0)
+            break;
+
+        count[ch]++;
+    }
+
+    if(close(file) == -1)
+    {
+        perror("Eroare la inchidere");
+        exit(4);
+    }
+
+    for(i = 0; i < ASCII_SIZE; i++)
+        if(count[i])
+            printf("Caracterul %c cu codul ASCII %d apare de %d ori in fisier.\n", i, i, count[i]);
+
+    return 0;
+}
+
+
+b) A doua soluție, în care citim mai eficient de pe disc (câte un sector de disc o dată și nu câte un octet o dată, astfel facem mai puține operații I/O cu discul):
+
+lab7_ex1b.c :
+=============
+
+#include <stdio.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#define ASCII_SIZE 256
+#define BUFFER_SIZE 4096
+
+unsigned char buffer[BUFFER_SIZE];
+int fd, bytes_read, i, count[ASCII_SIZE];
+
+int main(int argc,char** argv)
+{
+  if(argc==1) {
+    fprintf(stderr,"Dati fisierul de prelucrat ca parametru!\n");
+    return 1;
+  }
+
+  fd = open(argv[1],O_RDONLY);
+  if (fd == -1) {
+    perror("Opening file");
+    return 2;
+  }
+
+  while(1) {
+ 
+    bytes_read = read(fd, buffer, BUFFER_SIZE);
+
+    if(bytes_read == 0) {
+      break;
+    }
+
+    if(bytes_read == -1) {
+      perror("Reading the file");
+      return 3;
+    }
+
+    for(i=0; i<bytes_read; i++) {
+      count[buffer[i]]++;
+    }
+    
+  }
+
+  close(fd);
+
+  for(i=0; i<ASCII_SIZE; i++) {
+    if(count[i])
+      printf("Caracterul %c cu codul ASCII %d apare de %d ori in fisier.\n", i, i, count[i]);
+  }
+
+  return 0;
+}
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.2  Să se implementeze o clonă simplificată pentru comanda find, care funcționează astfel: se primește un singur parametru, reprezentând numele exact al fișierului
+      care este căutat. Căutarea se face în directorul home al utilizatorului curent, parcurgând recursiv întreaga structură de subdirectoare ale acestuia.
+      Se va afișa calea spre fiecare rezultat al căutarii. În plus, în caz de eroare, programul va afișa un mesaj explicit și se va închide "elegant", returnând și
+      un cod de terminare specific erorii apărute.
+      (Indicație: parcurgeți directorul cu șablonul dat la curs și, pentru fiecare intrare din director ce are numele dat, afișați calea ei, iar pentru fiecare intrare
+      ce este de tip director, apelați recursiv funcția de parcurgere.)
+
+Ideea de rezolvare: similar ca la exercițiul 3, parcurgerea recursiva a structurii de directoare se poate implementa cu șablonul dat la curs.
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.3  Să se scrie un program C care să afișeze tipul, dimensiunea, permisiunile și proprietarul tuturor fișierelor și subdirectoarelor din
+      directorul dat ca argument (parcurs recursiv). 
+      (Indicație: parcurgeți directorul cu șablonul dat la curs și, pentru fiecare intrare din director, utilizați primitiva stat pentru a afla datele cerute în enunț.)
+
+
+Iată o soluție completă, ce tratează și toate erorile posibile:
+
+lab7_ex3.c :
+============
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <pwd.h>
+
+void procesare_intrare(char *cale);
+
+int main(int argc, char *argv[])
+{
+    struct stat st;
+
+    if(1 == argc)
+    {
+         fprintf(stderr,"Usage: %s director!\n",argv[0]);
+         exit(1);
+    }
+
+    if(0 != stat(argv[1],&st) )
+    {
+        fprintf(stderr,"Eroare la stat pentru %s .\t", argv[1]);
+        perror("Cauza este");
+        exit(2);
+    }
+    if( ! S_ISDIR(st.st_mode) )
+    {
+        fprintf(stderr,"Eroare: %s nu este director!\n",argv[1]);
+        exit(3);
+    }
+
+    printf("Analizam directorul: %s\n",argv[1]);
+    procesare_intrare(argv[1]);
+    return 0;
+}
+
+void afisare_info(char* cale);
+
+void procesare_intrare(char *cale)
+{
+    /* argumentul cale va fi numele unui fisier de orice tip: poate fi director, ori de tip fisier normal, ori de celelalte 4 tipuri posibile */
+
+    DIR *dir;
+    struct dirent *de;
+    struct stat st;
+    char nume[PATH_MAX];
+
+    /* intai afisam informatiile despre fisierul (de orice tip) cale */
+
+    afisare_info(cale);
+
+
+    /* apoi, numai daca cale este de tip director, il parcurgem pentru a procesa continutul sau */
+
+    if(0 != stat(cale,&st) )
+    {
+        fprintf(stderr,"Eroare la stat pentru %s .\t", cale);
+        perror("Cauza este");
+        return;   /* nu terminam executia cu exit(), ci revenim in apelant pentru a continua cu ceea ce a mai ramas de procesat */
+    }
+    /* Se mai poate optimiza: apelul stat de mai sus poate fi economisit, deoarece a fost deja executat in apelul anterior afisare_info(),
+       putem sa modificam functia afisare_info() ca sa intoarca un int prin care sa ne spuna daca cale este director sau nu.
+    */
+    if( S_ISDIR(st.st_mode) )  /* daca cale este director */
+    {
+        if(NULL == (dir=opendir(cale)) )
+        {
+            fprintf(stderr,"Eroare deschidere director %s .\t",cale);
+            perror("Cauza este");
+            return;   /* nu terminam executia cu exit(), ci revenim in apelant pentru a continua cu ceea ce a mai ramas de procesat */
+        }
+        while(NULL != (de=readdir(dir)) )
+        {
+            if( strcmp(de->d_name,".") && strcmp(de->d_name,"..") )  /* ignoram intrarile implicite . si .. din orice director */
+            {
+                sprintf(nume,"%s/%s",cale,de->d_name);
+                procesare_intrare(nume);  /* apelul recursiv pentru parcurgere */
+            }
+        }
+        closedir(dir);
+    }
+}
+
+void afisare_info(char* cale)
+{
+    struct stat st;
+    struct passwd *pwd;         /* o vom folosi pentru a afla username-ul asociat unui UID */
+    char perm[10]="---------";  /* aici vom construi forma simbolica pentru permisiunile fisierului */
+
+    if(0 != stat(cale,&st) )
+    {
+        fprintf(stderr,"Eroare la stat pentru %s .\t", cale);
+        perror("Cauza este");
+        return;   /* nu terminam executia cu exit(), ci revenim in apelant pentru a continua cu ceea ce a mai ramas de procesat */
+    }
+
+    printf("Analizam fisierul/directorul: %s\n",cale);
+    printf("\tTipul acestui fisier: ");
+    switch(st.st_mode & S_IFMT)
+    {
+        case S_IFSOCK: printf("Socket\n"); break;
+        case S_IFLNK : printf("Link\n");break;
+        case S_IFREG : printf("Fisier obisnuit\n");break;
+        case S_IFBLK : printf("Block device\n"); break;
+        case S_IFCHR : printf("Character device\n"); break;
+        case S_IFIFO : printf("FIFO\n"); break;
+        case S_IFDIR : printf("Director\n"); break;
+        default: printf("Unknown file type");
+    }
+    printf("\tDimensiunea: %lld octeti\n",(long long)st.st_size);
+
+    if(S_IRUSR & st.st_mode) perm[0]='r';
+    if(S_IWUSR & st.st_mode) perm[1]='w';
+    if(S_IXUSR & st.st_mode) perm[2]='x';
+    if(S_IRGRP & st.st_mode) perm[3]='r';
+    if(S_IWGRP & st.st_mode) perm[4]='w';
+    if(S_IXGRP & st.st_mode) perm[5]='x';
+    if(S_IROTH & st.st_mode) perm[6]='r';
+    if(S_IWOTH & st.st_mode) perm[7]='w';
+    if(S_IXOTH & st.st_mode) perm[8]='x';
+
+    printf("\tPermisiunile: %s\n",perm);
+
+    if(NULL != (pwd=getpwuid(st.st_uid)) )
+        printf("\tProprietarul: %s (cu UID-ul: %ld)\n",pwd->pw_name,(long)st.st_uid);
+    else
+        printf("\tProprietarul are UID-ul: %ld\n",(long)st.st_uid);    
+}
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+Exerciții suplimentare:
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Rezolvări pentru câteva dintre exercițiile suplimentare.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4  Să se scrie un program C care să realizeze prelucrările descrise în continuare. Într-un fișier text sunt scrise numere întregi. Să se calculeze
+      media aritmetică pentru fiecare grup de numere cuprinse între două numere cu valoarea zero din fișier. Să se scrie valorile respective pe câte
+      o linie distinctă dintr-un alt fișier text (rezultat). Începutul și sfârșitul fișierului cu numere joacă rolul unui număr cu valoarea zero.
+      Numele fișierelor sursă și destinație se specifică drept argumente la linia de comandă a programului.
+
+
+Iată o soluție completă, ce tratează și toate erorile posibile. Deoarece fișierele sursă și destinație conțin numere în format text și nu în format binar,
+vom folosi funcțiile de citire/scriere cu format fscanf()/fprintf() din biblioteca stdio.h; s-ar putea folosi direct apelurile de sistem read()/write()
+în locul acestora, dar atunci ar trebui implementate în programul nostru funcționalitățile de conversie de la reprezentarea numerelor în format text la
+reprezentarea binară a numerelor, precum și conversia inversă (adică ar trebui implementate funcționalitățile oferite de funcțiile fscanf() și fprintf(),
+ceea ce nu constituie scopul acestui exercițiu).
+
+lab7_ex4.c :
+============
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+int main(int argc, char *argv[])
+{
+    if(argc < 3)
+    {
+        fprintf(stderr,"Usage: %s fisier-sursa fisier-destinatie\n", argv[0]);
+        exit(1);
+    }
+    if( -1 == access(argv[1],R_OK) )
+    {
+        fprintf(stderr,"Eroare la access pentru %s .\t", argv[1]);
+        perror("Cauza este");
+        exit(2);
+    }
+
+    FILE *f_sursa, *f_dest;
+
+    if( NULL == (f_sursa=fopen(argv[1],"r")) )
+    {
+        fprintf(stderr,"Eroare la deschiderea read-only a fisierului %s\n",argv[1]);
+        perror("Cauza este");
+        exit(3);
+    }
+    if( NULL == (f_dest=fopen(argv[2],"w")) )
+    {
+        fprintf(stderr,"Eroare la deschiderea write-only a fisierului %s\n",argv[2]);
+        perror("Cauza este");
+        exit(4);
+    }
+
+    int val=0, nr=0, sum=0;
+
+    while(1)    /* while( ! feof(f_sursa) ) */
+    {
+        int cod_r;
+        cod_r = fscanf(f_sursa,"%d",&val);
+        if(cod_r == EOF) break;  /* apelul feof() intoarce true abia dupa ce un apel fscanf()/fread() "citeste" pozitia End-Of-File,
+                                   situatie in care variabila noastra val va ramane cu valoarea veche (de la iteratia precedenta),
+                                   deci trebuie sa ne asiguram ca nu prelucram de 2 ori ultimul numar din fisier !!! */
+        if(cod_r != 1)
+        {
+            fprintf(stderr,"Eroare la citirea din fisierul %s\n",argv[1]);
+            perror("Cauza este");
+            exit(5);
+        }
+        if(0 != val)
+        {
+            sum += val;
+            nr++;
+            printf("%d %d %d\n", val, sum, nr);
+        }
+        else /* am gasit un zero ce indica sfarsitul unui grup de numere */
+        {
+            if(0 != nr) fprintf(f_dest,"%.2f\n",(float)sum/nr); /* ne asiguram ca avem cel putin un numar in grup, altfel este impartire la zero */
+            sum = 0;
+            nr  = 0;
+        }
+    }
+    if(0 != nr) fprintf(f_dest,"%.2f\n",(float)sum/nr);  /* ultimul grup de numere */
+
+    fclose(f_sursa);
+    fclose(f_dest);
+    return 0;
+}
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.5  Într-un fișier text sunt scrise linii de text sub forma: două numere întregi urmate de un caracter, ce poate fi '+', '-', '*' sau '/'.
+      Să se scrie un program C care citește linia a N-a din fișier, efectuează operația dintre cele două numere și apoi scrie într-un alt fișier text
+      o linie de forma:   nr1 operator nr2 = rezultat  . Linia de rezultat se va adăuga la sfârșitul fișierului rezultat. Numărul de ordine N al liniei
+      vizate din fișierul text sursă, precum și numele fișierului sursă și al celui rezultat se specifică drept argumente în linia de comandă.
+
+
+Iată o soluție completă, ce tratează și toate erorile posibile. Deoarece fișierele sursă și destinație conțin numere în format text și nu în format binar,
+vom folosi funcțiile de citire/scriere cu format fscanf()/fprintf() din biblioteca stdio.h; s-ar putea folosi direct apelurile de sistem read()/write()
+în locul acestora, dar atunci ar trebui implementate în programul nostru funcționalitățile de conversie de la reprezentarea numerelor în format text la
+reprezentarea binară a numerelor, precum și conversia inversă (adică ar trebui implementate funcționalitățile oferite de funcțiile fscanf() și fprintf(),
+ceea ce nu constituie scopul acestui exercițiu).
+
+lab7_ex5.c :
+============
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+
+/* extern int errno;  // variabila declarata in fisierul header errno.h */
+
+int main(int argc, char *argv[])
+{
+    if(argc < 4)
+    {
+        fprintf(stderr,"Usage: %s N fisier-sursa fisier-destinatie\n",argv[0]);
+        exit(1);
+    }
+    if( -1 == access(argv[2],R_OK) )
+    {
+        fprintf(stderr,"Eroare la access pentru %s .\t", argv[2]);
+        perror("Cauza este");
+        exit(2);
+    }
+
+    long int N;
+
+    errno = 0; /* To distinguish success/failure after call */
+
+    N = strtol(argv[1],NULL,10); /* conversia */
+
+    if(errno != 0)
+    {
+        fprintf(stderr,"Eroare de conversie numerica pentru parametrul: %s\n",argv[1]);
+        exit(3);
+    }
+    if(N <= 0)
+    {
+        fprintf(stderr,"Eroare: parametrul N trebuie sa fie numar pozitiv.\n");
+        exit(4);
+    }
+
+    FILE *f_sursa, *f_dest;
+
+    if( NULL == (f_sursa = fopen(argv[2],"r")) )
+    {
+        fprintf(stderr,"Eroare la deschiderea read-only a fisierului %s\n",argv[2]);
+        perror("Cauza este");
+        exit(5);
+    }
+    if( NULL == (f_dest = fopen(argv[3],"a")) )
+    {
+        fprintf(stderr,"Eroare la deschiderea write-only cu append a fisierului %s\n",argv[3]);
+        perror("Cauza este");
+        exit(6);
+    }
+
+    int linia_curenta=0, nr1, nr2, valid=1;
+    float rezultat;
+    char ch;
+
+    while( ! feof(f_sursa) )
+    {
+        int cod_r;
+        cod_r = fscanf(f_sursa,"%d %d %c\n",&nr1, &nr2, &ch);
+        if( (cod_r != 3) && (cod_r != EOF) )
+        {
+            fprintf(stderr,"Eroare: linia %d din fisierul %s nu respecta formatul specificat in enuntul problemei.\n", linia_curenta, argv[1]);
+            exit(7);
+        }
+
+        linia_curenta++;
+        if(linia_curenta == N)
+        {
+            switch(ch)
+            {
+                case '+': rezultat = nr1 + nr2; break;
+                case '-': rezultat = nr1 - nr2; break;
+                case '*': rezultat = nr1 * nr2; break;
+                case '/': if (nr2 == 0)
+                          {
+                              fprintf(stderr,"Operatie imposibila: %d %c %d (impartire la zero)\n",nr1, ch, nr2);
+                              valid=0;
+                          }
+                          else rezultat = (float) nr1 / nr2;
+                          break;
+                default : fprintf(stderr,"Operator necunoscut: %ch\n",ch);
+                          valid=0;
+            }
+            if(valid)
+            {
+                fprintf(f_dest,"%d %c %d = %.2f\n", nr1, ch, nr2, rezultat);
+            }
+            valid=1;
+            break;
+        }
+    }
+
+    if(linia_curenta < N)
+    {
+        fprintf(stderr,"Eroare: linia %ld nu exista in fisierul sursa (acesta are doar %d linii).\n",N,linia_curenta);
+    }
+
+    fclose(f_sursa);
+    fclose(f_dest);
+    return 0;
+}
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.6   Să se scrie un program C care să implementeze comanda wc, inclusiv cu opțiunile sale -c, -w, -l și -L. 
+       (Atenție: se cere să se scrie cod C care realizează aceeași funcționalitate ca și comanda wc, deci nu în sensul ca să apelați direct
+       comanda wc dintr-un program C folosind funcția system().)
+
+
+a) Iată o primă soluție, incompletă și neoptimizată: 
+
+lab7_ex6a.c :
+=============
+
+/*
+*  Prima soluție, incompletă: nu s-a implementat și tratarea opțiunii -L
+*
+*  Este neoptimizată: cele 3 numere se calculează întotdeauna, dar se afișează numai cele pentru care este prezentă opțiunea respectivă.
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+int main( int argc, char* argv[])
+{
+    int no_bytes, no_words, no_lines;  // nr. de octeti, nr. de cuvinte, nr. de linii de text, lungimea maxima a unei linii de text
+    int last;     // starea (ce este ultimul caracter/zona citita pana la pozitia curenta): 0 - la inceput de fisier , 1 - cuvant , 2 - zona de spatii albe
+    int fc,fw,fn; // flaguri pentru optiunile prezente in linia de comanda, respectiv -c ,-w, -n, -L
+    int i,ch;
+    char *nume_fisier = NULL;
+    FILE *fd;
+
+    no_bytes = no_words = no_lines = 0;
+    last = 0;
+    fc = fw = fn = 0;
+
+    // parsarea liniei de comanda pentru a gasi numele fisierului si optiunile
+    for(i=1;i<argc;i++)
+    {
+        if(0 == strcmp(argv[i],"-c")) fc = 1;
+        else if(0 == strcmp(argv[i],"-w")) fw = 1;
+            else if(0 == strcmp(argv[i],"-n")) fn = 1;
+                else if(! nume_fisier) nume_fisier = argv[i];
+                    else { printf("Programul accepta (deocamdata) un singur nume de fisier, nu mai multe!\n"); exit(1); }
+    }
+    if( (argc == 1) || (nume_fisier == NULL) )
+    {
+        fprintf(stderr,"Ati uitat sa specificati numele fisierului de prelucrat!\n");
+        exit(2);
+    }
+
+    if (0 == fc+fw+fn)
+        fc = fw = fn = 1; // daca nici o optiune nu-i prezenta in linia de comanda, le consideram pe cele trei similar ca la comanda wc
+
+    // deschidem fisierul de prelucrat
+    if(NULL == (fd=fopen(nume_fisier,"r")))
+    {
+        perror("Eroare la deschiderea fisierului de prelucrat!\n");
+        exit(1);
+    }
+
+    // parcurgem fisierul si calculam toate cele trei numere
+    while(1)
+    {
+        ch = fgetc(fd);
+        if( feof(fd) ) break;
+
+        no_bytes++;
+
+        if( isspace(ch) )
+        {
+            if(last == 1)  { no_words++; }
+            last = 2;
+        }
+        else
+            last = 1;
+
+        if (ch == '\n') { no_lines++; }
+    }
+
+    // la sfarsit de fisier, daca avem starea 1, trebuie incrementat numarul de cuvinte
+    // iar daca ultimul caracter nu fusese '\n', trebuie incrementat numarul de linii
+    if (last == 1) { no_words++; }
+    //if (ch != '\n') { no_lines++; } // nu mai facem asta, caci nici comanda wc nu o face!
+
+    // urmeaza afisarea
+    printf("Fisierul %s contine: ", nume_fisier);
+    if( fc ) printf("%d caractere (octeti) , ", no_bytes);
+    if( fw ) printf("%d cuvinte , ", no_words);
+    if( fn ) printf("%d linii de text.", no_lines);
+    printf("\n");
+
+    return 0;
+}
+
+
+b) A doua soluție, completă și optimizată:
+
+lab7_ex6b.c :
+=============
+
+/*
+*  A doua soluție, completă: s-a implementat și tratarea opțiunii -L
+*
+*  Este optimizată: cele 4 numere nu se calculează întotdeauna, ci numai cele pentru care este prezentă opțiunea respectivă.
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+int main( int argc, char* argv[])
+{
+    unsigned long no_bytes, no_words;   // nr. de octeti, nr. de cuvinte
+    unsigned int no_lines, max_length;  // nr. de linii de text, lungimea maxima a unei linii de text
+    unsigned char last;     // starea (ce este ultimul caracter/zona citita pana la pozitia curenta):
+                            //  0 - la inceput de fisier , 1 - cuvant , 2 - zona de spatii albe
+    unsigned char fc,fw,fn,fL;         // flaguri pentru optiunile prezente in linia de comanda, respectiv -c ,-w, -n, -L
+    unsigned int iterator, no_chars_per_line = 0;
+    unsigned char ch;
+    char *nume_fisier = NULL;
+    FILE *fd;
+
+    no_bytes = no_words = no_lines = max_length = 0;
+    last = 0;
+    fc = fw = fn = fL = 0;
+
+    /* parsarea liniei de comanda pentru a gasi numele fisierului si optiunile */
+    for (iterator=1; iterator<argc; iterator++)
+    {
+        if(0 == strcmp(argv[iterator],"-c")) fc = 1;
+        else if(0 == strcmp(argv[iterator],"-w")) fw = 1;
+            else if(0 == strcmp(argv[iterator],"-n")) fn = 1;
+                else if(0 == strcmp(argv[iterator],"-L")) fL = 1;
+                    else if(! nume_fisier) nume_fisier = argv[iterator];
+                        else { printf("Programul accepta (deocamdata) un singur nume de fisier, nu mai multe!\n"); exit(1); }
+    }
+    if( (argc == 1) || (nume_fisier == NULL) )
+    {
+        fprintf(stderr,"Ati uitat sa specificati numele fisierului de prelucrat!\n");
+        exit(2);
+    }
+
+    if (0 == fc+fw+fn+fL)
+        fc = fw = fn = 1; // daca nici o optiune nu-i prezenta in linia de comanda, le consideram pe cele trei similar ca la comanda wc
+
+    /* deschidem fisierul de prelucrat */
+    if(NULL == (fd=fopen(nume_fisier,"r")))
+    {
+        perror("Eroare la deschiderea fisierului de prelucrat!\n");
+        exit(1);
+    }
+
+    /* parcurgem fisierul si calculam ceea ce se cere */
+    while(1)
+    {
+        ch = fgetc(fd);
+        if( feof(fd) ) break;
+
+        /* numai daca este prezenta optiunea -c , facem calculele pentru a numara octetii */
+        // if( fc ) { no_bytes++; }
+        no_bytes++;	// este mai eficient asa, deoarece un test if este mai costisitor decat o incrementare
+
+        /* numai daca este prezenta optiunea -w , facem calculele pentru a numara cuvintele */
+        if( fw )
+        {
+            if( isspace(ch) )
+            {
+                if(last == 1)  { no_words++; }
+                last = 2;
+            }
+            else
+                last = 1;
+        }
+
+        /* numai daca este prezenta optiunea -n , facem calculele pentru a numara liniile de text */
+        if( fn )
+        {
+            if(ch == '\n') { no_lines++; }
+        }
+
+        /* numai daca este prezenta optiunea -L , facem calculele pentru a afla lungimea maxima a liniilor de text */
+        if( fL )
+        {
+           if(ch != '\n')
+           {
+              if(ch == '\t')
+                  no_chars_per_line += 8;  // comanda wc numara 8 pozitii pentru fiecare caracter TAB
+              else
+                  no_chars_per_line++;
+           }
+           else
+           {
+              if(max_length < no_chars_per_line) { max_length = no_chars_per_line; }
+              no_chars_per_line = 0;
+           }
+        }
+    }
+
+    /* La sfarsit de fisier avem de facut trei lucruri: */
+
+    /* a) daca starea este 1, trebuie incrementat numarul de cuvinte */
+    if( fw )
+    {
+        if(last == 1) { no_words++; }
+    }
+
+    /* b) daca ultimul caracter nu fusese '\n', trebuie incrementat numarul de linii */
+    // if( fn )
+    // {
+    //    if(ch != '\n') { no_lines++; }
+    // }
+    // Observatie: nu mai facem aceasta actiune b), caci nici comanda wc nu o face (practic, wc nu numara liniile de text, ci caracterele newline!)
+
+    /* c) daca ultimul caracter nu fusese '\n', trebuie vazut daca nu cumva ultima linie este de lungime maxima */
+    if( fL )
+    {
+        if(ch != '\n')
+        {
+            if(max_length < no_chars_per_line)  { max_length = no_chars_per_line; }
+        }
+    }
+
+    /* urmeaza afisarea numerelor corespunzatoare optiunilor specificate */
+    printf("Fisierul %s contine: ", nume_fisier);
+    if( fc ) printf("%lu caractere (octeti) , ", no_bytes);
+    if( fw ) printf("%lu cuvinte , ", no_words);
+    if( fn ) printf("%u linii de text , ", no_lines);
+    if( fL ) printf("%u lungimea maxima a liniilor de text.", max_length);
+    printf("\n");
+
+    return 0;
+}
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.7  Să se scrie un program C care să implementeze comanda cp, inclusiv cu opțiunile sale -i și -u. 
+      (Atenție: se cere să se scrie cod C care realizează aceeași funcționalitate ca și comanda cp, deci nu în sensul ca să apelați direct
+      comanda cp dintr-un program C folosind funcția system().)
+
+
+Iată o soluție completă, ce tratează și toate erorile posibile.
+
+lab7_ex7.c :
+============
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <time.h>
+
+int copie_opts_i_u(char *nume_sursa, char *nume_dest, int flag_opt_i, int flag_opt_u);
+
+int main(int argc, char *argv[])
+{
+    int i, flag_opt_i=0, flag_opt_u=0;
+    char *nume_sursa=NULL;
+    char *nume_dest =NULL;
+
+    if (argc < 3)
+    {
+        fprintf(stderr,"Usage: %s [-i] [-u] fisier-sursa fisier-destinatie\n",argv[0]);
+        exit(1);
+    }
+
+    /* Prelucram argumentele din linia de comanda pentru a identifica prezenta optiunilor -i si/sau -u, precum si
+       a numelor de fisiere sursa si destinatie.
+       Observatie: vom permite ca optiunile -i si -u sa apara in orice pozitie in linia de comanda.
+    */
+    for(i=1;i<argc;i++)
+    {
+        if( strcmp(argv[i],"-i") == 0 )   {  flag_opt_i = 1;  continue;  }
+        if( strcmp(argv[i],"-u") == 0 )   {  flag_opt_u = 1;  continue;  }
+        if( nume_sursa == NULL )  {  nume_sursa = argv[i];  continue;  }
+        if( nume_dest  == NULL )  {  nume_dest  = argv[i];  continue;  }
+
+        fprintf(stderr, "Eroare: nu ati respectat formatul impus pentru argumentele din linia de comanda.\n");
+        exit(2);
+    }
+
+    if( nume_sursa == NULL )  { fprintf(stderr, "Eroare: nu ati specificat fisierul sursa.\n"); exit(3); }
+
+    if( nume_dest  == NULL )  { fprintf(stderr, "Eroare: nu ati specificat fisierul destinatie.\n"); exit(4); }
+
+    /* Acum urmeaza apelul unei functii care implementeaza functionalitatea de copiere ceruta in enunt */
+    return copie_opts_i_u(nume_sursa, nume_dest, flag_opt_i, flag_opt_u);
+}
+
+
+int copie_simpla(char *nume_sursa, char *nume_dest);
+
+int copie_opts_i_u(char *nume_sursa, char *nume_dest, int flag_opt_i, int flag_opt_u)
+{
+    if( access(nume_sursa,R_OK) != 0 )
+    {
+        fprintf(stderr,"Eroare: fisierul sursa %s nu este accesibil (i.e. nu exista, sau nu am drept de citire, sau ce?)\t",nume_sursa);
+        perror("Cauza exacta este");
+        return 10;
+    }
+
+    int flag_dest_exista;
+
+    if( access(nume_dest,F_OK) == 0 ) { flag_dest_exista = 1; } else { flag_dest_exista = 0; }
+
+    int flag_abort_copiere = 0;
+
+    if( flag_dest_exista )
+    {
+        /* trebuie sa verificam vechimea destinatiei ? (optiunea -u) */
+        if(flag_opt_u)
+        {
+           struct stat st_sursa, st_dest;
+
+           if(0 != stat(nume_sursa,&st_sursa) )
+           {
+               fprintf(stderr,"Eroare la stat pentru fisierul sursa %s .\t", nume_sursa);
+               perror("Cauza este");
+               return 11;
+           }
+           if(0 != stat(nume_dest,&st_dest) )
+           {
+               fprintf(stderr,"Eroare la stat pentru fisierul destinatie %s .\t", nume_dest);
+               perror("Cauza este");
+               return 12;
+           }
+
+           if(st_sursa.st_mtime > st_dest.st_mtime)
+           {
+               printf("\tSursa %s are 'last modified time': %s", nume_sursa, ctime(&st_sursa.st_mtime) );
+               printf("\tDestinatia %s are 'last modified time': %s", nume_dest, ctime(&st_dest.st_mtime));
+               printf("Notify message: copierea se va face cu suprascrierea destinatiei (deoarece sursa este mai recenta decat destinatia).\n");
+           }
+           else
+           {
+               flag_abort_copiere = 1;
+               printf("Sursa %s nu este mai recenta decat destinatia %s. Deci NU suprascriu destinatia cu sursa!\n", nume_sursa, nume_dest);
+           }
+        }
+
+        /* mai trebuie sa interogam utilizatorul ? (optiunea -i) */
+        if( !flag_abort_copiere && flag_opt_i)
+        {  /* dam prioritate optiunii -u : daca destinatia este mai recenta, nu mai intrebam utilizatorul */
+           char raspuns;
+
+           printf("Fisierul destinatie %s exista deja (dar este mai vechi decat sursa). Vreti sa-l suprascrieti? (D/N)\n",nume_dest);
+           do{
+               scanf("%s",&raspuns);
+               if( (raspuns != 'D') && (raspuns != 'N') )
+                   printf("Raspundeti cu D sau N.\n");
+               else
+                   break;
+           }while(1);
+
+           if(raspuns == 'N')
+               flag_abort_copiere = 1;
+           else
+               printf("Notify message: copierea se va face cu suprascrierea destinatiei (cu acceptul utilizatorului).\n");
+        }
+    }
+
+
+    if(! flag_abort_copiere)
+    {
+         return copie_simpla(nume_sursa, nume_dest);
+    }
+    else
+    {
+         fprintf(stderr, "Copierea lui %s in %s nu s-a mai efectuat.\n", nume_sursa, nume_dest);
+         return 13;
+    }
+}
+
+
+int copie_simpla(char *nume_sursa, char *nume_dest)
+{
+    FILE *f_sursa, *f_dest;
+    char ch;
+
+    if( NULL == (f_sursa = fopen(nume_sursa,"r")) )
+    {
+        fprintf(stderr,"Eroare la deschiderea fisierului sursa %s\n",nume_sursa);
+        perror("Cauza este");
+        return 20;
+    }
+    if( NULL == (f_dest = fopen(nume_dest,"w")) )
+    {
+        fprintf(stderr,"Eroare la deschiderea fisierului destinatie %s\n",nume_dest);
+        perror("Cauza este");
+        return 21;
+    }
+
+    while(1)    /* while( ! feof(f_sursa) ) */
+    {
+        int cod_r;
+        cod_r = fscanf(f_sursa,"%c",&ch);
+        if(cod_r == EOF) break;  /* apelul feof() intoarce true abia dupa ce un apel fscanf()/fread() "citeste" pozitia End-Of-File,
+                                   situatie in care variabila noastra ch va ramane cu valoarea veche (de la iteratia precedenta),
+                                   deci trebuie sa ne asiguram ca nu prelucram de 2 ori ultimul caracter din fisier !!! */
+        if(cod_r != 1)
+        {
+            fprintf(stderr,"Eroare la citirea din fisierul %s\n",nume_sursa);
+            perror("Cauza este");
+            return 22;
+        }
+
+        if( fprintf(f_dest,"%c",ch) != 1 )
+        {
+            fprintf(stderr,"Eroare la scrierea in fisierul %s\n",nume_dest);
+            perror("Cauza este");
+            return 23;
+        }
+
+    }
+    fclose(f_sursa);
+    fclose(f_dest);
+
+    printf("Am copiat cu succes fisierul sursa %s in destinatia %s\n",nume_sursa,nume_dest);
+    return 0;
+
+/*
+  Pentru eficienta, citirea fizica de pe disc trebuie sa se faca la nivel de sector fizic, nu la nivel de octeti individuali.
+  Din acest motiv, pentru simplitate am folosit aici functiile din biblioteca stdio.h, care lucreaza buffer-izat.
+  Alternativ, daca am folosi apelurile de sistem read/write, ar trebui ca fiecare apel sa citeasca/scrie nu un singur octet,
+  ci un multiplu de 512 octeti.
+*/
+}
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+8.-14. Încercați să le rezolvați singuri.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>

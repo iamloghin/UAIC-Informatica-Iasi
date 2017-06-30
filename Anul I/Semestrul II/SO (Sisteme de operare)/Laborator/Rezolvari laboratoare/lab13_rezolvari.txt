@@ -1,0 +1,389 @@
+Iata posibile rezolvari pentru cateva dintre exercitiile din laboratorul al 13-lea:
+
+<!------------------------------------------------------------------------------------------------------------------------>
+
+1. Sa se rescrie exemplele pipe-ex1.c si pipe-ex2.c date la lectia despre canale interne, folosind canale externe in loc de
+canale interne pentru comunicatia intre procese.
+
+Ideea de rezolvare: se inlocuieste apelul pipe(...) cu un apel mkfifo(...) cu parametrii specifici, iar apoi pe fiecare ramura de
+executie parinte/fiu se deschide capatul necesar (in locul inchiderii capatului nenecesar din prima varianta cu canale interne).
+
+pipe-ex1.c modificat :
+======================
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
+
+#define NMAX 1000
+
+int main(void)
+{
+  int p[2];
+  char ch;
+  pid_t pid;
+
+  /* creare fifo */
+  if(-1 == mkfifo("canal-extern", 0600) )
+  {
+      if(errno == EEXIST)   // errno=17 for "File already exists"
+         fprintf(stdout,"Nota: canalul fifo 'canal-extern' exista deja !\n");
+      else
+      {
+         perror("Eroare la crearea canalului fifo. Cauza erorii");
+         exit(1);
+      }
+  }
+
+  /* creare proces fiu */
+  if(-1 == (pid=fork()) )
+  {
+    perror("Eroare la crearea unui proces fiu. Cauza erorii");
+    exit(2);
+  }
+
+  if(pid)
+  { /* in tata */
+
+    /* tatal isi deschide capatul de scriere */
+    p[1]=open("canal-extern", O_WRONLY);
+
+    /* citeste caractere de la tastatura, pentru terminare: CTRL+D (i.e. EOF in Unix),
+       si le transmite doar pe acelea care sunt litere mici */
+    printf("Usage: tastati orice caractere si terminati cu Ctrl+D.\n");
+    while( (ch=getchar()) != EOF)
+      if((ch>='a') && (ch<='z'))
+        write(p[1],&ch,1);
+
+    /* tatal isi inchide capatul Write, pentru ca fiul sa poata citi EOF din canal ... */
+    close(p[1]);
+
+    /* ... si apoi asteapta terminarea fiului */
+    wait(NULL);
+  }
+  else
+  { /* in fiu */
+    char buffer[NMAX];
+    int nIndex = 0;
+
+    /* fiul isi deschide capatul de citire */
+    p[0]=open("canal-extern", O_RDONLY);
+
+    /* fiul citeste caracterele din pipe si salveaza in buffer,
+       pina depisteaza EOF, apoi afiseaza continutul bufferului. */
+
+    while( read(p[0],&ch,1) != 0)
+      if(nIndex < NMAX)
+        buffer[nIndex++] = ch;
+
+    buffer[ (nIndex==NMAX) ? NMAX-1 : nIndex ] = '\0';
+    printf("Fiu: am citit buffer=%s\n",buffer);
+
+    /* fiul isi inchide capatul Read */
+    close(p[0]);
+        /* Obs: nici nu mai era nevoie de acest close explicit, deoarece
+        oricum toti descriptorii sunt inchisi la terminarea programului.*/
+  }
+  return 0;
+}
+
+
+pipe-ex2.c modificat :
+======================
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <errno.h>
+
+int main(void)
+{
+  int nr, cod_r;
+  FILE *fin,*fout;
+  pid_t pid;
+
+  /* creare fifo */
+  if(-1 == mkfifo("canal-extern", 0600) )
+  {
+      if(errno == EEXIST)   // errno=17 for "File already exists"
+         fprintf(stdout,"Nota: canalul fifo 'canal-extern' exista deja !\n");
+      else
+      {
+         perror("Eroare la crearea canalului fifo. Cauza erorii");
+         exit(1);
+      }
+  }
+
+  /* creare proces fiu */
+  if(-1 == (pid=fork()) )
+  {
+    perror("Eroare la crearea unui proces fiu. Cauza erorii");
+    exit(2);
+  }
+
+  if(pid)
+  { /* in tata */
+
+    /* tatal isi deschide capatul de scriere */
+    fout = fopen("canal-extern","w");
+
+    /* citeste numere de la tastatura, pentru terminare: CTRL+D (i.e. EOF in Unix),
+       si le transmite prin canal procesului fiu.
+       OBSERVATIE: in canal numerele sunt scrise formatat, nu binar, si 
+       de aceea trebuie separate printr-un caracter care nu-i cifra
+       (in acest caz am folosit '\n') pentru a nu se "amesteca"
+       cifrele de la numere diferite atunci cind sunt citite din canal! */
+    printf("Usage: introduceti numere intregi si terminati cu Ctrl+D.\n");
+    while( (cod_r=scanf("%d",&nr)) != EOF)
+    {
+      if(cod_r == 1)
+      {
+         fprintf(fout,"%d\n",nr);
+         fflush(fout);
+      }
+      else
+      {
+         fprintf(stderr,"Eroare: nu ati introdus caractere permise sa apara intr-un numar!\n");
+         exit(3);
+      }
+    }
+
+    /* tatal isi inchide capatul Write, pentru ca fiul sa poata citi EOF din canal ... */
+    fclose(fout);
+
+    /* ... si apoi asteapta terminarea fiului */
+    wait(NULL);
+  }
+  else
+  { /* in fiu */
+
+    /* fiul isi deschide capatul de citire */
+    fin = fopen("canal-extern","r");
+
+    /* fiul citeste numerele din canal si le afiseaza pe ecran, pana depisteaza EOF in canal.
+       OBS: conform celor de mai sus, caracterul '\n' este folosit ca separator de numere ! */
+    while(fscanf(fin,"%d",&nr) != EOF)
+    {
+      printf("[Fiu] Am primit numarul: %d\n",nr);
+      fflush(stdout);
+    }
+
+    /* fiul isi inchide capatul Read */
+    fclose(fin);
+      /* Obs: nici nu mai era nevoie de acest fclose explicit, deoarece
+       oricum toti descriptorii sunt inchisi la terminarea programului.*/
+  }
+  return 0;
+}
+
+<!------------------------------------------------------------------------------------------------------------------------>
+
+2. [Hi-ho] Sa se scrie doua programe hi.c si ho.c, care sa produca urmatorul efect atunci cand sunt executate simultan (in paralel):
+primul sa scrie pe ecran textul "hi-" in mod repetat, iar al doilea sa scrie testul "ho, " in mod repetat, si in plus trebuie sa se
+sincronizeze procesele, folosind canale fifo, astfel incat pe ecran sa apara exact succesiunea: hi-ho, hi-ho, hi-ho, ... si nu alte
+combinatii posibile de interclasare a mesajelor afisate de cele doua procese atunci cand sunt lansate in executie simultan. 
+(Indicatie: folositi doua canale fifo, un canal fifo_hi2ho prin care programul hi il anunta pe celalalt ca este randul acestuia sa scrie
+pe ecran (i.e., resursa partajata de cele doua procese), si un alt canal fifo_ho2hi prin care programul ho il anunta pe celalalt ca este
+randul acestuia sa scrie pe ecran.)
+
+Iata o posibila rezolvare: solutia este formata din 2 programe sursa C, si anume:
+
+a) hi.c este programul care afiseaza "hi"-uri pe ecran:
+
+hi.c :
+======
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+
+int main(void)
+{
+   int fd_in,fd_out, nr_iteratii=100;
+   char ch='0';
+
+   /* creare fifo-uri */
+   if(-1 == mkfifo("hi2ho", 0600) )
+   {
+      if(errno != EEXIST)   // errno=17 for "File already exists"
+      {
+         perror("Eroare la crearea canalului fifo 'hi2ho'. Cauza erorii");
+         exit(1);
+      }
+   }
+
+   /* deschiderile necesare, doar a capetelor de scriere sau de citire absolut necesare */
+   fd_out = open("hi2ho",O_WRONLY);
+   fd_in  = open("ho2hi",O_RDONLY);
+
+   while(nr_iteratii > 0)
+   {
+	nr_iteratii--;
+
+        printf("Hi-");  fflush(stdout);
+
+	write(fd_out,&ch,1); // il "notific" pe celalalt ca este randul lui sa afiseze pe ecran
+
+	read(fd_in,&ch,1);  // astept sa "primesc notificare" de la celalalt ca pot continua
+   }
+
+   return 0;
+}
+
+b) ho.c este programul care afiseaza "ho"-uri pe ecran:
+
+ho.c :
+======
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+
+int main(void)
+{
+   int fd_in,fd_out, nr_iteratii=100;
+   char ch='1';
+
+   /* creare fifo-uri */
+   if(-1 == mkfifo("hi2ho", 0600) )
+   {
+      if(errno != EEXIST)   // errno=17 for "File already exists"
+      {
+         perror("Eroare la crearea canalului fifo 'hi2ho'. Cauza erorii");
+         exit(1);
+      }
+   }
+
+   if(-1 == mkfifo("ho2hi", 0600) )
+   {
+      if(errno != EEXIST)   // errno=17 for "File already exists"
+      {
+         perror("Eroare la crearea canalului fifo 'ho2hi'. Cauza erorii");
+         exit(1);
+      }
+   }
+
+   /* deschiderile necesare, doar a capetelor de scriere sau de citire absolut necesare */
+   fd_in  = open("hi2ho",O_RDONLY);
+   fd_out = open("ho2hi",O_WRONLY);
+
+   while(nr_iteratii > 0)
+   {
+	nr_iteratii--;
+
+	read(fd_in,&ch,1);  // astept sa "primesc notificare" de la celalalt ca pot continua
+
+        printf("ho, ");  fflush(stdout);
+
+	write(fd_out,&ch,1); // il "notific" pe celalalt ca este randul lui sa afiseze pe ecran
+   }
+
+   printf("\nSfarsit hi-ho!\n");
+   return 0;
+}
+
+Cele doua programe trebuie lansate simultan in executie, de exemplu in felul urmator:
+
+UNIX> ./hi.exe & ./ho.exe &
+
+Observatii:
+i)  ordinea in care se deschid cele 2 canale fifo in cele 2 programe este esentiala - trebuie deschise in aceeasi ordine in ambele
+    programe, caci altfel ar apare inter-blocaj: fiecare proces ar astepta la infinit fiind blocat la primul apel open() din program.
+ii) deoarece mai sus am ales sa deschidem mai intai canalul "hi2ho" si apoi canalul "ho2hi", sunt suficiente doar 1+2=3 apeluri
+    mkfifo ca mai sus (si nu 4, cate 2 in fiecare program) pentru a garanta faptul ca la orice executie posibila apelurile open
+    nu vor esua datorita motivului "fisier inexistent" (evident, mai sunt si alte cai de a garanta acest fapt, prin care se pot
+    folosi doar 2 apeluri mkfifo).
+
+<!------------------------------------------------------------------------------------------------------------------------>
+
+3. Sa se scrie un program C care sa determine capacitatea unui canal extern.
+(Indicatie: setati caracterul neblocant pentru canal si apoi scrieti in el pana se umple, in acelasi timp numarand cati octeti au fost scrisi.)
+
+Iata o posibila rezolvare, asemanatoare cu cea de la problema similara cu canale interne:
+
+dimens_fifo.c :
+===============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
+
+int main(void)
+{
+   int fd,dimens;
+   char ch='0';
+
+   /* creare fifo */
+   if(-1 == mkfifo("canal-extern", 0600) )
+   {
+      if(errno == EEXIST)   // errno=17 for "File already exists"
+         fprintf(stdout,"Nota: canalul fifo 'canal-extern' exista deja !\n");
+      else
+      {
+         perror("Eroare la crearea canalului fifo. Cauza erorii");
+         exit(1);
+      }
+   }
+
+   /* deschidere cu setare non-blocking necesara pentru capatul de scriere */
+   fd=open("canal-extern",O_RDWR | O_NONBLOCK);
+   if(-1 == fd)
+   {
+      perror("Eroare la deschiderea fisierului fifo cu setare non-blocking. Cauza erorii");
+      exit(2);
+   }
+
+   dimens=0;
+   printf("Incep sa umplu canalul fifo ...\n");
+
+   while(1)
+   {
+      if(-1 == write(fd,&ch,1) )
+      {
+         perror("\nEroare (posibil umplere pipe ?). Cauza erorii");
+         fprintf(stderr,"errno = %d\n", errno);
+         if(errno == EAGAIN)
+         {
+             fprintf(stderr,"Intr-adevar, cauza erorii este umplerea canalului!\n");
+             break;
+         }
+         else
+         {
+             fprintf(stderr,"Cauza erorii este alta decat umplerea canalului!\n");
+             exit(3);
+         }
+      }
+      else
+      {
+         ++dimens;
+         if(dimens%1024 == 0) { printf(" %d Ko ...  ", dimens/1024); fflush(stdout); usleep(50000); }
+      }
+   }
+
+   printf("Capacitatea unui canal fifo este de %d octeti.\n", dimens);
+   return 0;
+}
+
+<!------------------------------------------------------------------------------------------------------------------------>
+

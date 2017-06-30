@@ -1,0 +1,456 @@
+﻿
+Iată câteva posibile rezolvări pentru exercițiile din laboratorul al 11-lea:
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.1  Încercați să-l rezolvați singuri, folosind următoarea schiță ce descrie pașii ce trebuie implementați:
+
+/* Schita programului pentru exercitiul 1:
+
+- Procesul initial P0 va crea trei canale anonime, canal_P0toP1, canal_P1toP2 si canal_P2toP0
+- Apoi P0 va crea cele doua procese fii, P1 si P2 (astfel, acestea vor 'mosteni' descriptorii pentru cele trei canale),
+  evident al doilea apel fork() pentru crearea fiului P2 se va pune pe ramificatia tatalui de la primul apel fork()
+- Dupa crearea fiilor (moment din care toate cele trei procese se vor executa in paralel), P0 va continua astfel:
+  citeste continutul fisierului date.txt si-l scrie in canal_P0toP1
+- In final, P0 va astepta prin apelul read sa citeasca numarul transmis pe canal_P2toP0 si-l va afisa
+
+- Dupa creare, P1 va executa urmatoarea bucla:
+  1. citeste cate 1 octet din canal_P0toP1 si,
+  2. numai daca este litera mica, scrie acel octet in canal_P1toP2
+  Nota: terminarea buclei se va face cand P1 "citeste" EOF din canal_P0toP1.
+
+- Dupa creare, P2 va executa urmatoarea bucla:
+  1. citeste 1 octet (o litera mica) din canal_P1toP2
+  2. actualizeaza vectorul de aparitii si totalul specificat in enunt, pe baza literei citite
+  Nota: terminarea buclei se va face cand P2 "citeste" EOF din canal_P1toP2.
+  3. scrie totalul (un numar intreg) in canal_P2toP0
+
+  Nota: terminarea buclelor din P1 si P2 implica faptul ca P1, respectiv P2, sa "citeasca" EOF din canalul corespunzator,
+  i.e. faptul ca nu mai exista "scriitori" pentru canalul respectiv.
+  Asadar, asigurati-va de acest lucru!
+  Cel mai simplu mod: fiecare din cele 3 procese sa inchida fiecare din cele 6 capete ale celor 3 canale, cat mai devreme posibil
+  (i.e. din momentul cand nu va mai avea nevoie in viitor de acel capat). 
+*/
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.2  Încercați să-l rezolvați singuri, folosind următoarea schiță ce descrie pașii ce trebuie implementați:
+
+/* Schita programului pentru exercitiul 2:
+
+- Procesul initial P0 va crea doua canale anonime, canal_P1toP2 si canal_P2toP1, si va scrie 1 octet (oarecare) in canal_P2toP1
+- Apoi P0 va crea cele doua procese fii, P1 si P2 (astfel, acestea vor 'mosteni' descriptorii pentru cele doua canale)
+- Dupa crearea fiilor, sleep(1) si inchide toate capetele catre cele doua canale
+- In final, P0 poate astepta terminarea celor doi fii, din motive estetice (pentru a se afisa prompterul abia dupa terminarea lor)
+
+- Dupa creare, P1 va executa urmatoarea bucla:
+  1. citeste 1 octet (oarecare) din canal_P2toP1 (aici va astepta, prin apelul read(), pana va gasi 1 octet in canal)
+  2. citeste o noua linie din fisierul nume.txt si o afiseaza pe ecran 
+  3. scrie 1 octet (oarecare) in canal_P1toP2
+  Nota: terminarea buclei se va face cand P1 ajunge la EOF in nume.txt, sau cand octetul citit din canal_P2toP1 are o valoare speciala ce indica faptul ca P2 a terminat de parcurs fisierul lui.
+
+- Dupa creare, P2 va executa urmatoarea bucla:
+  1. citeste 1 octet (oarecare) din canal_P1toP2 (aici va astepta, prin apelul read(), pana va gasi 1 octet in canal)
+  2. citeste o noua linie din fisierul prenume.txt si o afiseaza pe ecran
+  3. scrie 1 octet (oarecare) in canal_P2toP1
+  Nota: terminarea buclei se va face cand P2 ajunge la EOF in prenume.txt, sau cand octetul citit din canal_P1toP2 are o valoare speciala ce indica faptul ca P1 a terminat de parcurs fisierul lui.
+*/
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+Exerciții suplimentare:
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Rezolvări pentru câteva dintre exercițiile suplimentare.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.3  Să se scrie un program C care să determine capacitatea unui canal anonim. 
+      (Indicație: setați caracterul neblocant pentru capătul de scriere în canal și apoi scrieți în el până se umple, în același timp numărând
+      câți octeți au fost scriși.)
+
+
+Iată o posibilă rezolvare:
+
+dimens_pipe.c :
+===============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
+
+int main(void)
+{
+   int p[2],dimens;
+   char ch='0';
+
+   /* creare pipe */
+   if(-1 == pipe(p) )
+   {
+      perror("Eroare la crearea canalului intern. Cauza erorii");
+      exit(1);
+   }
+
+   /* setare comportament non-blocking pentru capatul de scriere */
+   if(-1 == fcntl(p[1],F_SETFL,O_NONBLOCK) )
+   {
+      perror("Eroare la setarea non-blocking. Cauza erorii");
+      exit(2);
+   }
+
+   dimens=0;
+   printf("Incep sa umplu canalul intern ...\n");
+
+   while(1)
+   {
+      if(-1 == write(p[1],&ch,1) )
+      {
+         perror("\nEroare (posibil umplere pipe ?). Cauza erorii");
+         fprintf(stderr,"errno = %d\n", errno);
+         if(errno == EAGAIN)
+         {
+             fprintf(stderr,"Intr-adevar, cauza erorii este umplerea canalului!\n");
+             break;
+         }
+         else
+         {
+             fprintf(stderr,"Cauza erorii este alta decat umplerea canalului!\n");
+             exit(3);
+         }
+      }
+      else
+      {
+         ++dimens;
+         if(dimens%1024 == 0) { printf(" %d Ko ...  ", dimens/1024); fflush(stdout); usleep(50000); }
+      }
+   }
+
+   printf("Capacitatea unui canal intern este de %d octeti.\n",dimens);
+   return 0;
+}
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4. Încercați să-l rezolvați singuri.
+
+Notă: dacă nu reușiți, puteți consulta rezolvarea disponibilă la adresa http://profs.info.uaic.ro/~vidrascu/SO/cursuri/C-programs/pipe/suma_pipes.c,
+cu observația că acel program este soluția pentru o problemă similară ex.4, dar în care se folosesc doar două procese worker. 
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.5  Să se scrie un program C care "simulează"  comanda înlănțuită: 
+      UNIX> grep /bin/bash /etc/passwd | cut -d, -f1 
+      Cerință: pentru executarea comenzilor simple din lanț se vor utiliza apeluri de sistem de tip exec() și nu apeluri system(). 
+      (Indicație: folosiți două procese, unul care să apeleze cu exec() comanda grep, iar celălalt comanda cut. Înainte de apelurile exec(),
+      va trebui să folosiți un canal anonim și modul de obținere a redirectării I/O standard folosind primitivele dup() sau dup2(), pentru
+      a conecta ieșirea standard de la primul proces la intrarea standard a celui de-al doilea proces.)
+
+
+Iată o posibilă rezolvare:
+
+lab10_ex5.c :
+=============
+
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <errno.h>
+
+int main()
+{
+    pid_t pid;
+    int p[2];
+
+    if(-1 == pipe(p) )
+    {
+       fprintf(stderr, "Eroare: nu pot crea un canal intern, errno=%d\n",errno);
+       perror("Cauza erorii");
+       exit(1);
+    }
+
+    if(-1 == (pid=fork()) )
+    {
+        perror("Eroare: nu am putut crea un fiu. Cauza erorii");
+        exit(2);
+    }
+
+    if(pid==0)
+    {
+        if(-1 == dup2(p[1],1) )
+        {
+            perror("Eroare: redirectarea iesirii standard in fiu a esuat. Cauza erorii");
+            exit(3);
+        }
+
+        execlp("grep","grep","/bin/bash","/etc/passwd",NULL);
+        perror("Eroare la execlp() in fiu. Cauza erorii");
+        exit(4);
+    }
+    else
+    {
+        close(p[1]); // necesar pentru ca sa se termine executie comenzii cut (prin citirea EOF din canal)
+
+        if(-1 == dup2(p[0],0) )
+        {
+            perror("Eroare: redirectarea intrarii standard in parinte a esuat. Cauza erorii");
+            exit(5);
+        }
+
+        execlp("cut","cut","-d,","-f1",NULL);
+        perror("Eroare la execlp() in parinte. Cauza erorii");
+        exit(6);
+    }
+
+    return 0;
+}
+
+Observație (valabilă atât pentru problema 5, cât și pentru problema 6):
+după lansarea programului în execuție, interpretorul bash va reafișa prompterul imediat după terminarea execuției procesului inițial (cel aflat
+în foreground), chiar dacă execuțiile proceselor fii posibil să nu se fi încheiat.
+Ca urmare, pentru a garanta afișarea prompterului întotdeauna la sfârșitul execuției întregului program, este suficient ca procesul inițial (cel
+care creează procesele fii necesare pentru comenzile din lanț) să fie responsabil cu execuția (prin execlp) a ultimei comenzi din lanțul de comenzi
+specificat în enunțul problemei.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.6  Generalizarea exercițiului 5 de mai sus: 
+      a) Să se scrie un program C care "simulează", folosind apeluri exec() și nu system(), comanda înlănțuită: 
+      UNIX> grep /bin/bash /etc/passwd | cut -d, -f1 | sort -t: -k 3,3 -n 
+      (Indicație: rezolvare similară ca la exercițiul de antrenament amintit mai sus, doar că va fi nevoie de 3 procese, câte unul pentru fiecare
+      comandă simplă din comanda înlănțuită de mai sus, și de 2 canale anonime pentru realizarea înlănțuirilor.)
+
+
+i) Iată o primă rezolvare:
+
+lab10_ex6a.c :
+==============
+
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <errno.h>
+
+int main()
+{
+    pid_t pid1, pid2;
+    int p[2], q[2];
+
+    if(-1 == pipe(p) )
+    {
+       fprintf(stderr, "Eroare: nu pot crea primul canal intern, errno=%d\n",errno);
+       perror("Cauza erorii");
+       exit(1);
+    }
+
+    if(-1 == (pid1=fork()) )
+    {
+        perror("Eroare: nu am putut crea primul fiu. Cauza erorii");
+        exit(2);
+    }
+
+    if(pid1==0)
+    {
+	if(-1 == pipe(q) )
+	{
+	fprintf(stderr, "Eroare: nu pot crea al doilea canal intern, errno=%d\n",errno);
+	perror("Cauza erorii");
+	exit(1);
+	}
+	
+	if(-1 == (pid2=fork()) )
+	{
+		perror("Eroare: nu am putut crea al doilea proces fiu. Cauza erorii");
+		exit(2);
+	}
+
+	if(pid2==0)
+	{
+		if(-1 == dup2(q[1],1) )
+		{
+		perror("Eroare: redirectarea iesirii standard in al doilea proces fiu a esuat. Cauza erorii");
+		exit(3);
+		}
+	
+		execlp("grep","grep","/bin/bash","/etc/passwd",NULL);
+		perror("Eroare la execlp() in al doilea proces fiu. Cauza erorii");
+		exit(4);
+	}
+	else
+	{
+		close(q[1]); // necesar pentru ca sa se termine executia comenzii cut (prin citirea EOF din canal)
+	
+		if(-1 == dup2(q[0],0) )
+		{
+		perror("Eroare: redirectarea intrarii standard in primul fiu a esuat. Cauza erorii");
+		exit(5);
+		}
+
+		if(-1 == dup2(p[1],1) )
+		{
+		perror("Eroare: redirectarea iesirii standard in primul fiu a esuat. Cauza erorii");
+		exit(6);
+		}
+	
+		execlp("cut","cut","-d,","-f1",NULL);
+		perror("Eroare la execlp() in primul fiu. Cauza erorii");
+		exit(7);
+	}
+
+    }
+    else
+    {
+        close(p[1]); // necesar pentru ca sa se termine executia comenzii sort (prin citirea EOF din canal)
+
+        if(-1 == dup2(p[0],0) )
+        {
+            perror("Eroare: redirectarea intrarii standard in parinte a esuat. Cauza erorii");
+            exit(8);
+        }
+
+        execlp("sort","sort","-t:","-k","3,3","-n",NULL);
+        perror("Eroare la execlp() in parinte. Cauza erorii");
+        exit(9);
+    }
+
+    return 0;
+}
+
+
+ii) Este relativ dificil de generalizat ideea de rezolvare de mai sus pentru lanțuri de comenzi de lungime din ce în ce mai mare.
+O altă idee, mult mai simplă pentru lanțuri de oricâte comenzi, constă în a "asambla" lanțul dintr-un program generic, precum în cele ce urmează.
+
+Iată o a doua rezolvare pentru problema 6,a): soluția este formată din 2 programe sursă C, și anume:
+
+1) lab10_ex6a_s2-1.c este programul generic ce execută un lanț de două comenzi (i.e. un program similar cu cel de la problema 5), particularizat
+aici pentru lanțul format din comanda grep și din comanda reprezentată de lanțul restului comenzilor (practic, apel recursiv):
+
+lab10_ex6a_s2-1.c :
+===================
+
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <errno.h>
+
+int main()
+{
+    pid_t pid;
+    int p[2];
+
+    if(-1 == pipe(p) )
+    {
+       fprintf(stderr, "Eroare: nu pot crea un canal intern, errno=%d\n",errno);
+       perror("Cauza erorii");
+       exit(1);
+    }
+
+    if(-1 == (pid=fork()) )
+    {
+        perror("Eroare: nu am putut crea un fiu. Cauza erorii");
+        exit(2);
+    }
+
+    if(pid==0)
+    {
+        if(-1 == dup2(p[1],1) )
+        {
+            perror("Eroare: redirectarea iesirii standard in fiu a esuat. Cauza erorii");
+            exit(3);
+        }
+
+        execlp("grep","grep","/bin/bash","/etc/passwd",NULL);
+        perror("Eroare la execlp() in fiu. Cauza erorii");
+        exit(4);
+    }
+    else
+    {
+        close(p[1]); // necesar pentru ca sa se termine executie comenzii cut (prin citirea EOF din canal)
+
+        if(-1 == dup2(p[0],0) )
+        {
+            perror("Eroare: redirectarea intrarii standard in parinte a esuat. Cauza erorii");
+            exit(5);
+        }
+
+        execl("lab10_ex6a_s2-2","lab10_ex6a_s2-2",NULL);
+        perror("Eroare la execl() in parinte. Cauza erorii");
+        exit(6);
+    }
+
+    return 0;
+}
+
+2) lab10_ex6a_s2-2.c este programul generic ce execută un lanț de două comenzi (i.e. un program similar cu cel de la problema 5), particularizat
+aici pentru lanțul format din comanda cut și din comanda sort (practic, sfârșitul recursiei):
+
+lab10_ex6a_s2-2.c :
+===================
+
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <errno.h>
+
+int main()
+{
+    pid_t pid;
+    int p[2];
+
+    if(-1 == pipe(p) )
+    {
+       fprintf(stderr, "Eroare: nu pot crea un canal intern, errno=%d\n",errno);
+       perror("Cauza erorii");
+       exit(1);
+    }
+
+    if(-1 == (pid=fork()) )
+    {
+        perror("Eroare: nu am putut crea un fiu. Cauza erorii");
+        exit(2);
+    }
+
+    if(pid==0)
+    {
+        if(-1 == dup2(p[1],1) )
+        {
+            perror("Eroare: redirectarea iesirii standard in fiu a esuat. Cauza erorii");
+            exit(3);
+        }
+
+        execlp("cut","cut","-d,","-f1",NULL);
+        perror("Eroare la execlp() in fiu. Cauza erorii");
+        exit(4);
+    }
+    else
+    {
+        close(p[1]); // necesar pentru ca sa se termine executie comenzii cut (prin citirea EOF din canal)
+
+        if(-1 == dup2(p[0],0) )
+        {
+            perror("Eroare: redirectarea intrarii standard in parinte a esuat. Cauza erorii");
+            exit(5);
+        }
+
+        execlp("sort","sort","-t:","-k","3,3","-n",NULL);
+        perror("Eroare la execlp() in parinte. Cauza erorii");
+        exit(6);
+    }
+
+    return 0;
+}
+
+Observație:
+Această a doua soluție, recursivă, are avantajul că poate fi aplicată foarte simplu pentru orice lanț de comenzi:
+pentru un lanț de N comenzi, trebuie scrise N-1 instanțe ale programului generic de la problema 5, cu fiecare instanță
+particularizată în mod corespunzător prin modificarea doar a celor două linii de cod ce conțin apelurile execl()/execlp().
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.7. Încercați să-l rezolvați singuri.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>

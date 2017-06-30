@@ -1,0 +1,179 @@
+﻿<html>
+<head>
+  <title>Laborator</title>
+  <link rel="stylesheet" type="text/css" href="stiluri.css" />
+  <!-- pentru diacritice -->
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+<h2><font color="blue">Laborator #3 :</font> exerciții de antrenament</h2>
+
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+<!------------------------------------------------------------------------------------------------------------------------>
+<p><span class="stil_exercitii">I) Exerciții cu comenzi înlănțuite :</span></p>
+
+<p>
+1. Să se scrie comanda care calculează câte conturi de utilizatori (umani) există în sistem.
+<br>
+<i>Suplimentar</i>: filtrați conturile asociate la programe de sistem (i.e., cele care nu au /bin/bash ca shell de login).
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți comanda wc și informațiile din fișierul /etc/passwd ;
+pentru partea suplimentară, folosiți comanda grep pentru filtrarea cerută și înlănțuiți-o cu comanda wc.</span>)</small>
+</p>
+
+<p>
+2. Să se scrie comanda care afișează numărul total al utilizatorilor care sunt membri ai grupului studs.
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți comanda dintr-un exercițiu din laboratorul precedent,
+înlănțuită cu comenzile cut și wc, fiecare apelată cu opțiunile adecvate.</span>)</small>
+</p>
+
+<p>
+3. Să se scrie comanda care va scrie, în fișierul utilizatori-logati.txt, numele de cont ale tuturor utilizatorilor
+prezenți în sistem la momentul execuției comenzii, în ordine alfabetică (și unică).
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți oricare dintre comenzile who sau finger, înlănțuită cu comanda cut și apoi cu comanda sort,
+fiecare apelată cu opțiunile adecvate. Alternativ, puteți începe lanțul cu comanda users, caz în care veți avea nevoie și de comanda tr.</span>)</small>
+</p>
+
+<p>
+4. Să se scrie comanda care afișează (în mod unic) toate shell-urile folosite de utilizatorii sistemului.
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți înlănțuiri de comenzi simple și informațiile din fișierul /etc/passwd.</span>)</small>
+</p>
+
+<p>
+5. Să se scrie comanda care afișează câți dintre utilizatorii sistemului conțin "ana" în numele de cont, dar nu în contextul "diana".
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți înlănțuiri de comenzi simple și informațiile din fișierul /etc/passwd.</span>)</small>
+</p>
+
+<p><!-- old ex.12 -->
+6. Să se scrie comanda care afișează numărul total de procese (rulate în toate sesiunile deschise) ale utilizatorului cu numele de cont specificat ca parametru al comenzii.
+<br>
+<small>(Indicație: <span class="stil_hint">prelucrați rezultatele afișate de comanda ps, apelată cu opțiunile adecvate.</span>)</small>
+</p>
+
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<p class="stil_ex_suplimentare">Exerciții suplimentare:</p>
+
+<p><!-- old ex.5 -->
+7. Să se scrie comanda care afișează numele real, UID-ul și GID-ul pentru toți utilizatorii sistemului,
+în formatul "UID->GID->Nume Prenume" , sortați crescător după UID.
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți înlănțuiri de comenzi simple și informațiile din fișierul /etc/passwd.</span>)</small>
+</p>
+
+<p><!-- old ex.7 -->
+8. Să se scrie comanda care afișează data și ora logării și calculatorul de pe care s-a făcut logarea,
+pentru toate sesiunile deschise, la momentul execuției comenzii, de un utilizator specificat ca argument al comenzii.
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți înlănțuiri de comenzi simple, prelucrând informațiile despre utilizatorii conectați la sistem
+în acel moment.</span>)</small>
+</p>
+
+<p><!-- old ex.10 -->
+9. Să se scrie comanda care afișează ultimii 15 utilizatori conectați la sistem, în funcție de ora conectării, precum și data, ora și stația de la care s-au conectat.
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți înlănțuiri de comenzi simple, prelucrând informațiile despre utilizatorii conectați la sistem
+în acel moment.</span>)</small>
+</p>
+
+<p><!-- old ex.11 -->
+10. Să se scrie comanda care afișează pentru fiecare utilizator conectat la sistem, numele de cont, stația de la care s-a conectat și procesul rulat în foreground,
+în ordinea alfabetică a numelor de cont. 
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți înlănțuiri de comenzi simple, prelucrând informațiile despre utilizatorii conectați la sistem
+în acel moment.</span>)</small>
+</p>
+
+<p><!-- old ex.9 -->
+11. Să se scrie comanda care afișează numele de cont și numele real al utilizatorilor conectați la sistem, al căror prenume se termină cu litera 'a'.
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți înlănțuiri de comenzi simple, prelucrând informațiile despre utilizatorii conectați la sistem
+în acel moment. Pentru comanda grep folosiți expresia regulată care exprimă faptul că linia de text se termină cu un anumit șablon.</span>)</small>
+</p>
+
+<p><!-- old ex.8 -->
+12. Să se scrie comanda care scrie în fișierul a.txt numele de cont ale tuturor utilizatorilor conectați la sistem, al căror nume de cont începe cu litera 'a'.
+<br>
+<small>(Indicație: <span class="stil_hint">rezolvarea este asemănătoare cu cea a exercițiului precedent.</span>)</small>
+</p>
+
+<p><!-- old ex.6 -->
+13. Să se scrie comanda care afișează toți utilizatorii sistemului care au UID-ul mai mare decât (sau egal cu) 5000.
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți înlănțuiri de comenzi simple și informațiile din fișierul /etc/passwd.
+Pentru a descrie numere mai mari sau egale cu 5000, se poate folosi comanda grep cu un șablon de tip expresie regulată.</span>)</small>
+</p>
+
+<!-- obs: e mai dificila
+<p>
+14. Să se scrie comanda care afișează toate numele de grupuri de utilizatori, pentru care numărul de utilizatori este mai mare decât 300.
+</p>
+-->
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+<!------------------------------------------------------------------------------------------------------------------------>
+<p><span class="stil_exercitii">II) Exercițiu experimental cu fișierele de inițializare a unei sesiuni de lucru :</span></p>
+
+<p>
+Testați ce se întâmplă când aveți în directorul home propriu ambele fișiere de initializare .bash_profile și .profile.
+Cum sunt ele executate, în ce ordine? Sau care dintre ele este executat, în caz că numai unul este executat?
+<br>
+Ce se întâmplă dacă aveți doar fișierul .profile, nu și fișierul .bash_profile?
+<br>
+Dar în situația inversă, când este prezent numai fișierul .bash_profile?
+<br>
+Dar dacă nici unul dintre cele două fișiere nu este prezent în directorul home, ce se întâmplă?
+<br>
+<small>(Indicație: <span class="stil_hint">în fiecare dintre cele patru situații, adăugați în fișierele amintite o comandă de afișare de genul
+echo "Acum se execută fișierul X" , iar apoi deschideți o nouă sesiune de lucru și urmăriți ce mesaje apar pe ecran.</span>)</small>
+</p>
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+<!------------------------------------------------------------------------------------------------------------------------>
+<p><span class="stil_exercitii">III) Exercițiu experimental cu redirectările I/O :</span></p>
+
+<p>
+Care vor fi efectiv cele trei dispozitive I/O standard în timpul execuției unei comenzi, pentru fiecare dintre liniile de comandă următoare:
+<pre>comanda 2>&1 >fisier
+<br>comanda 2>>&1 >fisier
+<br>comanda 2>&1 >>fisier
+<br>comanda 2>>&1 >>fisier
+<br>comanda >fisier 2>&1
+<br>comanda >fisier 2>>&1
+<br>comanda >>fisier 2>&1
+<br>comanda >>fisier 2>>&1
+</pre>
+Ce se întâmplă de fapt în fiecare caz? Se pierde ceva, iar dacă răspunsul este afirmativ, atunci ce anume se pierde?
+<br>
+<small>(Indicație: <span class="stil_hint">folosiți o comandă care să producă și mesaje de eroare, și afișare pe ieșirea normală standard,
+cum ar fi de exemplu comanda: ls -l ~/.bash_profile ~/MailulMeu </span>)</small>
+</p>
+
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+<!------------------------------------------------------------------------------------------------------------------------>
+<p><span class="stil_exercitii">IV) Exercițiu cu fișiere de comenzi (partea 1-a):</span></p>
+
+<p>
+Să se scrie un script care să listeze toți parametrii din linia de apel sub forma:
+param_i = valoarea parametrului al i-lea ,
+cu i luând valori de la 1 la numărul total de parametri.
+</p>
+
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+
+</body>
+</html>

@@ -1,0 +1,146 @@
+1.
+
+- vi fact1.sh   # You can use also commands: 'touch fact1.sh' then 'nano fact1.sh'
+		______________________________________________
+		#!/bin/bash
+		# fact1
+		# Finding factorial of a given number
+		#
+
+		echo "Introdu valoarea: "
+		read num
+		fact=1
+		n=$num
+		while [ $num -ge 1 ]		# You can use here commands also while(($num<=1))
+		do
+
+			# You can use bellow commands also fact=$((fact*num))
+			fact=`echo $fact \* $num|bc`
+			let num--
+
+		done
+		echo "Factorial de $n este $fact"
+		______________________________________________
+		
+- chmod (u)+x fact1.sh		# You can use also commands: 'chmod 744 fact1.sh'
+- bash fact1.sh 	# You can use also commands: './fact.sh'
+
+
+2.
+
+- vi fact2.sh	# You can use also commands: 'touch fact2.sh' then 'nano fact2.sh'
+	    _______________________________________________
+		#!/bin/bash
+		# fact2
+		# Foloseste: bash fact2.sh Numar	# You can use here commands also ./fact2.sh Number
+
+		factorial ()  
+		{
+		local number=$1
+		if [ $number -eq 0 ]		# You can use here commands also if(($number==0))
+		then
+			Factorial=1
+		else
+			let "next = number - 1"
+			factorial $next
+			Factorial=$((number*Factorial))
+		fi
+		return $Factorial
+		}
+
+		# This part is optional
+		# Main
+		# if [ $# -ne 1 ]
+		# then
+		#	 echo "Argument invalid"
+		#	 echo "Foloseste: bash fact2.sh Numar "
+		#	 exit 1
+		# fi
+		
+		factorial $1
+		echo "Factorial de $1 este $Factorial"
+		_______________________________________________
+
+- chmod +x fact2.sh
+- bash fact2.sh 4		# You can use here commands also ./fact2.sh 4
+
+3.
+	    _______________________________________________
+		#!/bin/bash
+		#
+
+		compilare()
+		{
+		for i in $i/*.cpp   # ($1 - este un path)
+		do
+			g++ $i -o $(basename $i "cpp")      # ! basename fara "cpp" va returna numele.cpp
+		done
+		}
+		
+		compilare
+		_______________________________________________
+
+4. i
+		______________________________________________
+		#!/bin/bash
+		# n*m
+		# Inmultire prin adunare
+		#
+
+		echo "Introdu valoarea n: "
+		read num
+		n=$num
+		aux=n
+		echo "Introdu valoarea m: "
+		read num
+
+		for i in `seq 1 $num`;    	# You can use here commands also for((i=1; i<=num; i++))
+		do
+			aux=`echo $aux \+ $n|bc`		# You can use here commands also aux=$((aux + n))
+		done
+		echo " "
+		echo "Rezultatul inmultirii $n * $num este = $aux"
+		______________________________________________
+		
+4. ii
+		______________________________________________
+		#!/bin/bash
+		# n la m
+		# Functia putere
+		#
+
+		echo "Introdu valoarea: "
+		read num
+		n=$num
+		aux=n
+		echo "Introdu puterea: "
+		read num
+
+		for i in `seq 2 $num`;		# You can use here commands also for((i=2; i<=num; i++))
+		do
+			aux=`echo $aux \* $n|bc`		# You can use here commands also aux=$((aux * n))
+		done
+		echo " "
+		echo "Rezultatul $n ^ $num este = $aux"
+		______________________________________________		
+5.
+		______________________________________________
+		#!/bin/bash
+		# Media aritmetica
+		#
+
+		media()
+		{
+			read -a elemente
+			for i in ${elemente[@]}
+			do
+				let total+=$i
+				let num++
+			done
+				total=$(( total / num))
+		}
+
+		echo "Introdu numerele cu spatiu intre ele: "
+		media
+		echo "Media este = $total"
+		______________________________________________

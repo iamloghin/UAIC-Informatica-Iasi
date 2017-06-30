@@ -1,0 +1,597 @@
+﻿
+Iată câteva posibile rezolvări pentru exercițiile din laboratorul al 8-lea:
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex. 1, 3, 5 și 6. Încercați să le rezolvați singuri. Vă puteți inspira din rezolvarea exercițiilor 2 și 4 de mai jos.
+
+Observație generală: toate exercițiile din acest laborator sunt asemănătoare cu programul demonstrativ de la lecția practică despre lacăte pe fișiere, versiunea a 4-a,
+i.e. ele presupun să scrieți câte un program ce va fi rulat prin lansarea în execuție paralelă a mai multor instanțe ale sale, iar fiecare instanță va face
+o anumită prelucrare, prin acces exclusiv minimal, asupra unui fișier de date partajat de toate aceste instanțe de execuție ale programului respectiv.
+
+Ce diferă de la un exercițiu la altul, este doar operația de prelucrare a conținutului fișierului de date partajat, fiind vorba de operații de prelucrare
+ceva mai complexe decât cea efectuată de programul demonstrativ de la lecția practică despre lacăte pe fișiere.
+
+Mai mult, tipurile de date prelucrate de aceste operații de prelucrare, sunt și ele mai complexe, i.e. nu doar un caracter, ci numere întregi, sau numere reale, etc.
+Din acest motiv, reprezentarea 'textuală' a acestor tipuri de date (e.g. un număr întreg în reprezentare 'textuală' este string-ul format din cifrele sale, eventual
+precedat de semnul '-', etc.) nu este cea mai adecvată, deoarece stocarea acestei reprezentări ocupă un număr variabil de octeți, în funcție de valoarea acelui număr!
+
+Pentru eficiența și ușurința de programare, toate aceste tipuri de date trebuie reprezentate 'în formă binară' (e.g. un număr întreg este reprezentat în 'binar' folosind
+codificarea prin complement față de 2, un număr real este reprezentat folosind codificarea în virgulă mobilă, etc.), care are avantajul că stocarea acestor reprezentări
+ocupă un număr fix de octeți (e.g. orice întreg se stochează pe exact sizeof(int) octeți, orice număr real se stochează pe exact sizeof(float) octeți, etc.).
+În acest fel toate înregistrările din fișierul de date partajat vor avea lungime fixă, ceea ce va ușura foarte mult prelucrarea lor concurentă .
+
+(Observație: a nu se confunda reprezentarea binară a datelor cu reprezentarea lor textuală în baza 2 (e.g., pentru întregi, aceasta ar fi secvența de caractere '0' și '1'
+corespunzătoare șirului de biți din reprezentarea binară a acelui întreg).
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.2  Implementați problema secțiunii critice de la curs în scenariul următor: se dă drept resursa partajată de procese un fișier binar, denumit "peco.bin", ce conține
+      un număr real (stocat de preferință în format binar, pentru ca lungimea fișierului să fie invariabilă, sizeof(float), motivația fiind similară cu explicația dată
+      în indicația de la exercițiul 1 de mai sus). Acest număr reprezintă volumul curent de combustibil din rezervorul unei stații PECO.
+      Asupra acestei resurse se vor face operațiuni de alimentare a autovehiculelor (i.e. extragere din rezervor) și respectiv de re-alimentare a rezervei stației
+      PECO (i.e. depunere în rezervor) a unei cantități de combustibil.
+      Scrieți un program C care să efectueze diverse operațiuni de depuneri și extrageri la intervale variate de timp, cantitățile depuse și respectiv extrase fiind
+      specificate ca parametri în linia de comandă, spre exemplu prin apelul:
+
+      UNIX> ./prg-ex2  2550 -10,9 -35,42 3500 -20,45 ...
+
+      se va efectua întâi o depunere a cantității de 25500 litri, apoi o extragere a cantității de 10,9 litri, ș.a.m.d.
+      Programul va accesa fișierul în manieră cooperantă folosind lacăte în scriere pe durata de efectuare a fiecărei operații de depunere sau extragere, astfel încât
+      să se permită execuția simultană a două sau mai multor instanțe ale programului, fără să apară efecte nedorite datorită fenomenului de 'race conditions'.
+      Operațiunile de depuneri și extrageri vor fi implementate astfel încât să afișeze pe ecran mesaje explicative despre ceea ce se execută, mesaje ce vor fi însoțite
+      de PID-ul procesului.
+
+Mai întâi, avem nevoie de o rutină ajutătoare, care să creeze fișierul de date inițial (ce va conține un număr real, stocat în format binar, reprezentând cantitatea
+inițială de combustibil din rezervor. Vom apela programul cu opțiunea -i pentru a invoca această rutină de inițializare.
+Similar, la finalul actualizărilor, vom avea nevoie de o altă rutină ajutătoare, care să afișeze conținutul final din rezervor. Vom apela programul cu opțiunea -o pentru
+a invoca această rutină de afișare finală.
+
+Restul programului va fi constituit din rutina principală, care va executa secvența de actualizări primită în linia de comandă, în manieră concurentă, conform celor
+specificate în enunțul problemei. Observație: rutina principală nu este implementată în întregime mai jos, ci vă rămâne dvs. sarcina să completați "bucățile" de cod
+ce lipsesc (indicate prin comentarii TODO).
+
+Pentru execuție, se vor rula în paralel mai multe instanțe ale programului, fiecare cu propria secvență de actualizări.
+Cu alte cuvinte, lansarea simultană în execuție concurentă a mai multor instanțe ale programului se va face astfel:
+
+UNIX> ./lab8_ex2 2550 -10,9 -35,42 3500 -20,45 ... &  ./lab8_ex2 -10,5 -34,2 2500 -25,56 ... &  ./lab8_ex2 ... & ...
+
+lab8_ex2.c :
+============
+
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+void initializare_fisier_date();
+void afisare_fisier_date();
+void secventa_de_actualizari(int n, char* nr[]);
+
+
+int main(int argc, char* argv[])
+{
+  if(argc == 1)
+  {
+     fprintf(stderr, "Eroare: programul trebuie apelat cu optiunile: -i, -o, sau cu o secventa de numere reale...\n");
+     return 1;
+  }
+
+  /* cazul de intializare a fisierului de date */
+  if( strcmp(argv[1],"-i") == 0 )
+  {
+     initializare_fisier_date();
+     return 0;
+  }
+
+  /* cazul de afisare a fisierului de date */
+  if( strcmp(argv[1],"-o") == 0 )
+  {
+     afisare_fisier_date();
+     return 0;
+  }
+
+  /* cazul general: actualizarea fisierului de date */
+  secventa_de_actualizari(argc, argv);
+  return 0;
+}
+
+
+
+void initializare_fisier_date()
+{/* Functionalitate: intializarea fisierului de date */
+
+   int fd;
+   float val;
+
+   printf("Dati cantitatea initiala de combustibil (i.e., un numar real pozitiv): ");
+   while( (1 != scanf("%f", &val)) && (val < 0) ) { fprintf(stderr,"Eroare: nu ati introdus un numar real pozitiv! Incercati din nou..."); }
+
+   if(-1 == (fd = open("peco.bin", O_WRONLY | O_CREAT | O_TRUNC, 0600) ) )
+   {
+      perror("Eroare la crearea fisierului de date..."); exit(2);
+   }
+
+   if(-1 == write(fd, &val, sizeof(float) ) )
+   {
+      perror("Eroare la scrierea valorii initiale in fisierul de date..."); exit(3);
+   }
+
+   close(fd);
+}
+
+
+void afisare_fisier_date()
+{/* Functionalitate: afisarea fisierului de date */
+
+   int fd;
+   float val;
+
+   if ( -1 == (fd = open("peco.bin", O_RDONLY) ) )
+   {
+      perror("Eroare la deschiderea pentru afisare a fisierului de date..."); exit(4); 
+   }
+
+   if (-1 == read(fd, &val, sizeof(float) ) )
+   {
+      perror("Eroare la citirea valorii finale din fisierul de date..."); exit(5); 
+   }
+
+   close(fd);
+
+   printf("Stocul/cantitatea finala de combustibil este: %f litri de combustibil.", val);
+}
+
+void secventa_de_actualizari(int n, char* nr[])
+{ /* Functionalitate: secventa de operatii de actualizare a fisierului de date */
+
+   float valoare, stoc;
+   int fd,i;
+
+   if ( -1 == (fd = open("peco.bin", O_RDWR) ) )
+   {
+      perror("Eroare la deschiderea pentru actualizare a fisierului de date..."); exit(6); 
+   }
+
+   srandom( getpid() ); // initializarea generatorului de numere aleatoare
+
+   for(i = 1; i<n; i++) // iteram prin secventa de numere reale specificata in linia de comanda
+   {
+      if(1 != sscanf(nr[i], "%f", &valoare))
+      {
+         fprintf(stderr, "[PID: %d] Eroare: ati specificat ca argument numar real o valoare invalida : %s !\n", getpid(), nr[i] );
+         exit(7);
+      }
+
+      /* inceput sectiune critica */
+      /* TODO: implementati singuri punerea lacatului in scriere pe fisier... */
+
+      if(-1 == lseek(fd, 0, SEEK_SET) ) // (re)pozitionam cursorul la inceputul fisierului
+      {
+         perror("Eroare la repozitionarea in fisierul de date, pentru citire..."); exit(8); 
+      }
+      if (-1 == read(fd, &stoc, sizeof(float) ) )
+      {
+         perror("Eroare la citirea valorii din fisierul de date..."); exit(9); 
+      }
+
+      printf("[PID: %d] Se adauga/extrage in/din rezervor cantitatea de %f litri de combustibil.\n", getpid(), valoare );
+
+      stoc = stoc + valoare;
+      /* TODO: implementati singuri tratarea exceptiei: stoc negativ */
+
+      if(-1 == lseek(fd, 0, SEEK_SET) ) // repozitionam cursorul la inceputul fisierului
+      {
+         perror("Eroare la repozitionarea in fisierul de date, pentru scriere..."); exit(10); 
+      }
+      if (-1 == write(fd, &stoc, sizeof(float) ) )
+      {
+         perror("Eroare la scrierea valorii actualizate in fisierul de date..."); exit(11); 
+      }
+  
+      /* sfarsit sectiune critica */
+      /* TODO: implementati singuri scoaterea lacatului de pe fisier... */
+
+      sleep( random() % 5 ); // o pauza aleatoare, de maxim 5 secunde, inainte de a continua cu urmatoarea iteratie
+   }     
+
+   close(fd);
+   printf("Am terminat de procesat secventa de actualizari.");
+}
+
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4  Să se scrie un program C care să sorteze concurent un fișier, al cărui nume se va da ca parametru în linia de comandă, în felul descris în continuare.
+      Fișierul va conține o secvență de numere întregi, neordonată. Programul va ordona crescător numerele din fișier folosind algoritmul Bubble-Sort clasic: 
+      se iterează în buclă parcurgeri ale secvenței de numere de la începutul secvenței spre sfărșitul ei, efectuându-se inversiuni ale perechilor ce nu sunt 
+      în ordinea 'mai mic decât'. Algoritmul se oprește când la ultima parcurgere nu s-a efectuat nici o inversiune.
+      La execuție se vor lansa două (sau mai multe) instanțe ale programului, care vor opera deci simultan asupra fișierului. Ca urmare, programul va trebui
+      să acceseze fișierul în manieră cooperantă, folosind lacăte în scriere pe durata de efectuare a fiecărei inversiuni în fișier pentru a nu apare efecte
+      nedorite. Lacătele se vor pune numai pe porțiunea strict necesară și numai pe durata minimă necesară (asemănător ca la versiunea 4 a programului
+      demonstrativ access discutat la curs). 
+      (Indicație: pentru eficiența și ușurința de programare, numerele întregi vor fi reprezentate binar în fișier, și nu textual, astfel încât fiecare
+      număr întreg să ocupe exact sizeof(int) octeți. În acest fel toate înregistrările din fișier vor avea lungime fixă, ceea ce va ușura prelucrarea lor.
+      Observație: a nu se confunda reprezentarea binară a datelor cu reprezentarea lor textuală în baza 2 (prin secvența de caractere '0' și '1'
+      corespunzătoare șirului de biți din reprezentarea binară). Primitivele read și write folosesc reprezentarea binară ! )
+
+
+a) Mai întâi, avem nevoie de un program ajutător, care să creeze fișierul de date inițial (ce va conține o secvență de numere întregi stocate în format
+binar în fișier), fișier ce va fi utilizat apoi de programul principal de sortare.
+
+bin-write.c :
+=============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+int main()
+{
+    int i,n,nr,fd;
+
+    if (-1 == (fd=creat("fis.dat",0600)))
+    {
+        perror("Eroare la crearea fisierului de date");
+	exit(1);
+    }
+
+    printf("Dati lungimea secventei de numere: ");
+    scanf("%d",&n);
+
+    for(i=1;i<=n;i++)
+    {
+        printf("Dati al %d-lea numar: ",i);
+	scanf("%d",&nr);
+        if(-1 == write(fd,&nr,sizeof(int)) )
+        {
+    	    perror("Eroare la scrierea in fisierul de date");
+    	    exit(2);
+        }
+    }
+
+    close(fd);
+    return 0;
+}
+
+b) De asemenea, vom avea nevoie de un al doilea program ajutător, care să ne afișeze pe ecran reprezentarea textuală a numerelor din secvența de numere
+(stocate în binar în fișierul de date) pe care o vom obține în urma sortării.
+
+bin-read.c :
+=============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+int main()
+{
+    int nr,rcod,fd;
+
+    if (-1 == (fd=open("fis.dat",O_RDONLY)))
+    {
+        perror("Eroare la deschiderea fisierului de date");
+	exit(1);
+    }
+
+    printf("Secventa de numere din fisierul de date este:\n");
+    
+    while(1)
+    {
+        if (-1 == (rcod=read(fd,&nr,sizeof(int))) )
+        {
+    	    perror("Eroare la citirea din fisierul de date");
+    	    exit(2);
+        }
+        if (0 == rcod) break;
+        printf("%d  ",nr);
+    }
+    printf("\n\n");
+
+    close(fd);
+    return 0;
+}
+
+c) Iată o primă variantă a programului de sortare, care nu satisface cerința de a putea fi lansate simultan mai multe instanțe ale programului pentru
+a sorta un același fișier de date (programul nu folosește lacăte pentru a asigura accesul exclusiv la secțiunea de fișier modificată la un moment dat
+și, ca urmare, va funcționa întotdeauna corect numai dacă se lansează în execuție o singură instanță a programului pentru a sorta un fișier de date):
+
+lab8_ex4_fara-lacate.c :
+========================
+
+/*
+*  Prima varianta, de sortare a unui fisier, in care nu folosim lacate.
+*  Solutia este corecta doar daca se ruleaza o singura instanta a programului.
+*/
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+
+void bubble_sort(int filedescr);
+
+int main(int argc,char *argv[])
+{
+    int fd;
+    if(argc < 2)
+    {
+	printf("Usage: %s datafile\n", argv[0]);
+	exit(1);
+    }
+
+    if(-1 == (fd=open(argv[1],O_RDWR)))
+    {
+        perror("Eroare la deschiderea fisierului de date");
+        exit(2);
+    }
+    
+    bubble_sort(fd);
+
+    close(fd);
+    return 0;
+}
+
+
+void bubble_sort(int filedescr)
+{
+    int rcod1,rcod2;
+    int numar1,numar2;
+
+    int modificare=1;
+
+    /* bucla in care facem parcurgeri repetate */
+    while(modificare)
+    {
+	modificare=0; /* va fi setat daca se face macar o inversiune la parcurgerea curenta */
+
+	/* bucla pentru o singura parcurgere a fisierului */
+	while(1)
+	{
+		rcod1=read(filedescr,&numar1,sizeof(int));
+		if(rcod1 == 0) break; /* am ajuns la EOF */
+		if(rcod1 ==-1)
+		{
+		    perror("Eroare la citirea primului numar dintr-o pereche");
+		    exit(3);
+		}	
+
+		rcod2=read(filedescr,&numar2,sizeof(int));
+		if(rcod2 == 0) break; /* am ajuns la EOF */
+		if(rcod2 ==-1)
+		{
+		    perror("Eroare la citirea celui de-al doilea numar dintr-o pereche");
+		    exit(4);
+		}	
+
+		/* daca este inversiune, le schimbam in fisier */
+		if(numar1 > numar2)
+		{
+			modificare=1;
+			
+			/* ne intoarcem inapoi cu 2 intregi pentru a face rescrierea */
+			if(-1 == lseek(filedescr,-2*sizeof(int),SEEK_CUR))
+			{
+			    perror("Eroare (1) la repozitionarea inapoi in fisier");
+			    exit(5);
+			}
+	
+			if(-1 == write(filedescr,&numar2,sizeof(int)))
+			{
+			    perror("Eroare la rescrierea primului numar dintr-o pereche");
+			    exit(6);
+			}
+			
+			if(-1 == write(filedescr,&numar1,sizeof(int)))
+			{
+			    perror("Eroare la rescrierea celui de-al doilea numar dintr-o pereche");
+			    exit(7);
+			}
+			
+		}
+		
+		/* pregatim urmatoarea iteratie: primul numar din noua pereche este ce-al doilea numar din perechea precedenta */
+		if(-1 == lseek(filedescr,-sizeof(int),SEEK_CUR))
+		{
+		    perror("Eroare (2) la repozitionarea inapoi in fisier");
+		    exit(8);
+		}
+	}/* sfarsitul buclei pentru o singura parcurgere a fisierului */
+
+	/* pregatim urmatoarea parcurgere: ne repozitionam la inceputul fisierului */
+	if(-1 == lseek(filedescr,0L,SEEK_SET))
+	{
+	    perror("Eroare (3) la repozitionarea inapoi in fisier");
+	    exit(9);
+	}
+
+    }/* sfarsitul buclei de parcurgeri repetate */
+}
+
+
+d) Iată și varianta concurentă a programului de sortare, care satisface cerința de a putea fi lansate simultan mai multe instanțe ale programului pentru
+a sorta un același fișier de date (programul folosește lacăte pentru a asigura accesul exclusiv la secțiunea de fișier modificată la un moment dat și,
+ca urmare, va funcționa întotdeauna corect, chiar și atunci când se lansează în execuție simultană mai multe instanțe pentru a sorta un fișier de date):
+
+lab8_ex4_cu-lacate.c :
+======================
+
+/*
+*  A doua varianta, de sortare a unui fisier, in care folosim lacate, puse pe sectiuni minimale si mentinute pe durate minimale.
+*  Solutia este corecta si atunci cand se ruleaza mai multe instante ale programului in acelasi timp, pe acelasi fisier de date.
+*/
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+
+void bubble_sort_cu_blocaje(int filedescr);
+
+int main(int argc,char *argv[])
+{
+    int fd;
+    if(argc < 2)
+    {
+	printf("Usage: %s datafile\n", argv[0]);
+	exit(1);
+    }
+
+    if(-1 == (fd=open(argv[1],O_RDWR)))
+    {
+        perror("Eroare la deschiderea fisierului de date");
+        exit(2);
+    }
+    
+    bubble_sort_cu_blocaje(fd);
+
+    close(fd);
+    return 0;
+}
+
+
+void bubble_sort_cu_blocaje(int filedescr)
+{
+    int rcod1,rcod2;
+    int numar1,numar2;
+    int numar1_recitit,numar2_recitit;
+
+    struct flock lacat_blocaj, lacat_deblocaj;
+
+    lacat_blocaj.l_type   = F_WRLCK;
+    lacat_blocaj.l_whence = SEEK_CUR;
+    lacat_blocaj.l_start  = 0;
+    lacat_blocaj.l_len    = 2*sizeof(int);
+
+    lacat_deblocaj.l_type   = F_UNLCK;
+    lacat_deblocaj.l_whence = SEEK_CUR;
+    lacat_deblocaj.l_start  = -2*sizeof(int);
+    lacat_deblocaj.l_len    = 2*sizeof(int);
+
+    int modificare=1;
+
+    /* bucla in care facem parcurgeri repetate */
+    while(modificare)
+    {
+	modificare=0; /* va fi setat daca se face macar o inversiune la parcurgerea curenta */
+
+	/* bucla pentru o singura parcurgere a fisierului */
+	while(1)
+	{
+		rcod1=read(filedescr,&numar1,sizeof(int));
+		if(rcod1 == 0) break;
+		if(rcod1 ==-1)
+		{
+		    perror("Eroare la citirea primului numar dintr-o pereche");
+		    exit(3);
+		}	
+
+		rcod2=read(filedescr,&numar2,sizeof(int));
+		if(rcod2 == 0) break;
+		if(rcod2 ==-1)
+		{
+		    perror("Eroare la citirea celui de-al doileai numar dintr-o pereche");
+		    exit(4);
+		}	
+
+		/* daca este inversiune, le schimbam in fisier */
+		/* la fel ca la versiunea demo access4.c de la curs: intai punem blocajul, apoi verificam daca niciunul dintre cele doua numere
+		   nu a fost cumva schimbat intre timp de o alta instanta de executie a programului, si doar in caz afirmativ facem rescrierea */ 
+		if(numar1 > numar2)
+		{
+			/* ne intoarcem inapoi cu 2 intregi pentru a face verificarea si apoi, eventual, rescrierea */
+			if(-1 == lseek(filedescr,-2*sizeof(int),SEEK_CUR))
+			{
+			    perror("Eroare (1) la repozitionarea inapoi in fisier");
+			    exit(5);
+			}
+
+			/* punem blocajul pe portiunea ce continea cele doua numere abia citite */
+			if(-1 == fcntl(filedescr,F_SETLKW,&lacat_blocaj))
+			{
+			    perror("Eroare la blocaj");
+			    exit(10);
+			}
+	
+			/* recitim cele 2 numere */
+			if(-1 == read(filedescr,&numar1_recitit,sizeof(int)))
+			{
+			    perror("Eroare la recitirea primului numar dintr-o pereche");
+			    exit(11);
+			}	
+
+			if(-1 == read(filedescr,&numar2_recitit,sizeof(int)))
+			{
+			    perror("Eroare la recitirea celui de-al doilea numar dintr-o pereche");
+			    exit(12);
+			}	
+			
+			/* daca numerele au ramas neschimbate, atunci efectuam rescrierea/inversiunea */
+			if( (numar1 == numar1_recitit) && (numar2 == numar2_recitit) )
+			{
+    			    modificare=1;
+
+			    /* ne intoarcem inapoi cu 2 intregi pentru a face rescrierea */
+			    if(-1 == lseek(filedescr,-2*sizeof(int),SEEK_CUR))
+			    {
+				perror("Eroare (4) la repozitionarea inapoi in fisier");
+				exit(13);
+			    }
+
+			    if(-1 == write(filedescr,&numar2,sizeof(int)))
+			    {
+				perror("Eroare la rescrierea primului numar dintr-o pereche");
+				exit(14);
+			    }
+			
+			    if(-1 == write(filedescr,&numar1,sizeof(int)))
+			    {
+				perror("Eroare la rescrierea celui de-al doilea numar dintr-o pereche");
+				exit(15);
+			    }
+			}
+			
+			/* indiferent daca am facut sau nu inversiune, acum trebuie debocata portiunea blocata mai sus
+			   (i.e. scoatem blocajul de pe portiunea ce continea cele doua numere)                        */
+			if(-1 == fcntl(filedescr,F_SETLKW,&lacat_deblocaj))
+			{
+			    perror("Eroare la deblocaj");
+			    exit(16);
+			}
+		}
+		
+		/* pregatim urmatoarea iteratie: primul numar din noua pereche este ce-al doilea numar din perechea precedenta */
+		if(-1 == lseek(filedescr,-sizeof(int),SEEK_CUR))
+		{
+		    perror("Eroare (2) la repozitionarea inapoi in fisier");
+		    exit(8);
+		}
+	}/* sfarsitul buclei pentru o singura parcurgere a fisierului */
+
+	/* pregatim urmatoarea parcurgere: ne repozitionam la inceputul fisierului */
+	if(-1 == lseek(filedescr,0L,SEEK_SET))
+	{
+	    perror("Eroare (3) la repozitionarea inapoi in fisier");
+	    exit(9);
+	}
+
+    }/* sfarsitul buclei de parcurgeri repetate */
+}
+
+
+Notă: lansarea simultană în execuție concurentă a mai multor instanțe ale programului se va face astfel:
+
+UNIX> ./lab8_ex4_cu-lacate fis.dat &  ./lab8_ex4_cu-lacate fis.dat &  ./lab8_ex4_cu-lacate fis.dat & ...
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>

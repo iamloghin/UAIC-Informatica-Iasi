@@ -1,0 +1,173 @@
+﻿<html>
+<head>
+  <title>Laborator</title>
+  <link rel="stylesheet" type="text/css" href="stiluri.css" />
+  <!-- pentru diacritice -->
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+<h2><font color="blue">Laborator #10 :</font> exerciții de antrenament</h2>
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+<!------------------------------------------------------------------------------------------------------------------------>
+<p><span class="stil_exercitii">Exerciții de programare C cu mai multe procese folosind apeluri fork/wait/exec :</span></p>
+
+<p>
+1. Să se scrie două programe C, unul numit master.c, iar celălalt slave.c.
+Programul master va afișa un prompter și va citi de la tastatură două numere întregi și unul dintre caracterele '+' sau '-'.
+Informațiile citite vor fi transmise, cu ajutorul apelului de sistem execl(), unui proces fiu nou creat, care va executa codul programului slave.
+Acesta va face operația corespunzătoare și va transmite rezultatul procesului părinte (master) cu ajutorul apelului de sistem exit().
+Procesul master va afișa apoi rezultatul pe ecran și va reafișa prompterul pentru o nouă citire.
+</p>
+
+<p>
+2. Să se scrie un program C care fie primește de la linia de comandă ca parametru numele unui director (specificat prin cale absolută sau relativă),
+fie îl citește de la tastatură în caz că nu este dat ca parametru în linia de comandă.
+Programul va afișa conținutul directorului folosind comanda <font color="blue"><tt>ls -l</tt></font>, apelată printr-un apel execlp(),
+iar apoi va întreba utilizatorul dacă dorește ștergerea acestui director.
+În caz de răspuns afirmativ, conținutul directorului va fi șters complet folosind comanda <font color="blue"><tt>rm</tt></font> cu parametrii corespunzători,
+de această dată apelată printr-un apel execv().
+La sfârșitul execuției programului se va afișa mesajul "Done.", în cazul când nu au fost erori la execuția celor două comenzi.
+</p>
+
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<p class="stil_ex_suplimentare">Exerciții suplimentare:</p>
+
+<p>Alte câteva exerciții de programare C cu apeluri fork/wait/exec:</p> 
+
+<p>
+3. i) <big>[ls]</big> Să se scrie un program C care să execute comanda <font color="blue"><tt>ls -i -l <i>dirname</i></tt></font>,
+unde <i>dirname</i> este un parametru dat la execuția programului în linia de comandă, sau directorul curent de lucru în caz că lipsește acest parametru.
+La sfârșitul execuției trebuie să fie afișat textul: "Comanda ls a fost executata ...", dar numai în situația când într-adevăr s-a executat comanda ls,
+altfel să fie afișat textul: "Comanda ls nu a putut fi executata...".
+<br>
+<b>Cerință</b>: se va folosi primitiva execlp() și nu funcția system() !
+<br>
+ ii) Să se rescrie programul de la punctul i), utilizând primitiva execl() în locul primitivei execlp().
+</p>
+
+<p>
+4. i) <big>[cut]</big> Să se scrie un program C care să execute comanda <font color="blue"><tt>cut -d: -f1,3 /etc/passwd</tt></font>,
+iar la sfârșitul execuției comenzii să afișeze textul: "Comanda cut a fost executata ...", dar numai în situația când într-adevăr s-a executat comanda cut,
+altfel să fie afișat textul: "Comanda cut nu a putut fi executata...".
+<br>
+<b>Cerință</b>: se va folosi primitiva execlp() și nu funcția system() !
+<br>
+ ii) Să se rescrie programul de la punctul i), utilizând primitiva execl() în locul primitivei execlp().
+</p>
+
+<p>
+5. i) <big>[finger]</big> Să se scrie un program C care să execute comanda <font color="blue"><tt>finger -p -m <i>username</i></tt></font>,
+unde <i>username</i> este un parametru dat la execuția programului în linia de comandă.
+La sfârșitul execuției trebuie să fie afișat textul: "Comanda finger a fost executata...", dar numai în situația când într-adevăr s-a executat comanda finger,
+altfel să fie afișat textul: "Comanda finger nu a putut fi executata...".
+<br>
+<b>Cerință</b>: se va folosi primitiva execlp() și nu funcția system() !
+<br>
+ ii) Să se rescrie programul de la punctul i), utilizând primitiva execl() în locul primitivei execlp().
+</p>
+
+<p>
+6. <big>[micro-shell]</big> Să se scrie un program C care să preia de la tastatură numele unor comenzi Linux, cu sau fără parametri, și să le execute.
+Se va folosi primitiva execlp() și nu funcția system(). La așteptarea introducerii unei comenzi, programul va afișa ca prompter textul "<tt>MyShell&gt;</tt>".
+</p>
+
+<p>
+7. <big>[Suma distribuită coordonată (folosind șablonul supervisor/workers)<!--master/slaves-->]</big>
+Să se scrie un program C care să realizeze următoarele: un proces P<sub>0</sub> (cu rol de proces supervisor) citește numere de la tastatură și le trimite
+împărțindu-le în mod egal la trei procese fii P<sub>1</sub>, P<sub>2</sub> și P<sub>3</sub> (cu rol de procese workers), acestea calculează sumele parțiale
+și le trimit înapoi la părintele P<sub>0</sub>, iar P<sub>0</sub> adună cele trei sume parțiale și afișează rezultatul final.
+<br>
+Pentru comunicația între procese se vor folosi fișiere obișnuite - procesul P<sub>0</sub> scrie numerele citite în fișierele f1i, f2i și f3i,
+de unde sunt citite de procesele P<sub>1</sub>, P<sub>2</sub> și respectiv P<sub>3</sub>, care le adună și scriu sumele parțiale în fișierele f1o, f2o și f3o,
+de unde sunt citite de procesul P<sub>0</sub> și adunate.
+<br>
+<b>Cerință</b>: programul worker să fie apelat prin exec din fiul creat cu fork de procesul supervisor, iar numele fișierului de intrare (f{1,2,3}i) și respectiv
+a celui de ieșire (f{1,2,3}o) să-i fie trasferate ca argumente în linia de comandă.
+<br>
+<i>Observație</i>: va trebui să rezolvați și unele probleme de sincronizare ce apar la comunicațiile între procese, i.e. trebuie asigurat faptul că citirea unor
+numere din fișier se va face abia după ce acestea au fost scrise în acel fișier!
+<br>
+<br>
+(Indicație: <span class="stil_hint">pentru sincronizarea necesară la fișierele de intrare este suficient să creați procesele fii abia după ce s-au terminat
+de introdus numerele de la tastatură.
+<br>
+Iar pentru sincronizarea necesară la fișierele de ieșire este suficient să folosiți apeluri wait în procesul supervisor pentru a aștepta terminarea proceselor workers,
+înainte de a citi sumele parțiale din fișierele de ieșire.</span>)
+</p>
+
+<p>
+8. <big>[Experiment]</big>
+Comparați eficiența programului de la exercițiul 7 ce calculează distribuit suma a N numere cu varianta secvențială de calcul a sumei a N numere.
+<br>
+<br>
+Modul de realizare a experimentului:
+<br>
+Scrieți și o variantă clasică de program ce calculează suma numerelor citite de la tastatură, apoi comparați timpii de execuție ai acestuia cu cei
+ai programului distribuit realizat mai sus, folosind comanda time și un set de fișiere cu secvențe de numere întregi de diverse lungimi (10.000 de întregi,
+100.000 de întregi, 1.000.000 de întregi etc.) și observați de la ce dimensiune a secvenței devine mai eficient (d.p.d.v. al timpului de execuție)
+programul distribuit decât cel secvențial.
+<br>
+<br>
+(Indicație: <span class="stil_hint">pentru a crea 10.000, 100.000, etc. de numere întregi "citite de la tastatură", folosiți programul bin-write.c din
+laboratorul precedent pe care va trebui să-l adaptați ca să genereze aleatoriu un număr dorit (10.000, 100.000, etc.) de numere întregi aleatoare, pe care să le scrie
+într-un fișier binar. Apoi creați cu ajutorul acestui program fișierele fis10k.dat, fis100k.dat, fis1M.dat, etc. care să conțină 10.000, 100.000, 1.000.000 etc.
+de numere întregi stocate în binar.
+<br>
+Adaptați apoi programul de la exercițiul 7 de mai sus și varianta sa secvențială astfel încât să citească numerele de la tastatură fără conversie de format (deci cu
+funcția fread și nu cu scanf), după care rulați ambele programe pe fiecare fișier de date și comparați timpii de execuție:
+<br>
+a) pentru fișierul cu secvența de 10.000 de întregi, rulați comenzile:
+<br>
+<tt>UNIX&gt; time ./prg_distribuit.exe &lt; fis10k.dat</tt>
+<br>
+<tt>UNIX&gt; time ./prg_secvential.exe &lt; fis10k.dat</tt>
+<br>
+b) pentru fișierul cu secvența de 100.000 de întregi, rulați comenzile:
+<br>
+<tt>UNIX&gt; time ./prg_distribuit.exe &lt; fis100k.dat</tt>
+<br>
+<tt>UNIX&gt; time ./prg_secvential.exe &lt; fis100k.dat</tt>
+<br>
+Repetați acest procedeu și pentru celelalte fișiere de date pe care le-ați creat și observați de la ce dimensiune a secvenței de numere întregi
+timpul de execuție al programului distribuit devine mai mic decât cel al programului secvențial.</span>)
+</p>
+
+<p>
+9. <big>[Sortare concurentă coordonată (folosind șablonul supervisor/workers)<!--master/slaves-->]</big>
+Să se scrie un program C care să realizeze coordonarea execuției concurente a N instanțe ale programului [Sortare concurentă] (i.e., ex.4 din <a href="lab8.html">Lab8</a>).
+<br>
+<br>
+(Indicație: <span class="stil_hint">Mai precis, programul pe care trebuie să-l scrieți va trebui să implementeze următoarele funcționalități (cu rol de proces supervisor):
+<br>
+> faza de inițializare:
+i) numărul de instanțe N se va prelua ca parametru în linia de comandă, sau se va citi, în caz contrar;
+ii) pregătirea secvenței de numere ce urmează a fi sortată, fie prin citirea ei de la tastatură, fie prin generarea de numere aleatoare,
+și scrierea ei într-un fișier "secventa.bin", în format binar, apelând în acest scop programul ajutător bin-write.c de la ex.4 din <a href="lab8.html">Lab8</a>;
+pentru simplificare puteți recurge la apelarea cu <tt>system(<i>comandă</i>);</tt>.
+<br>
+> faza de sortare concurentă coordonată:
+se vor porni cele N instanțe ale programului worker (i.e. programul lab8_ex4_cu-lacate.c de la ex.4 din <a href="lab8.html">Lab8</a>), astfel:
+procesul supervisor va crea N procese fii (a se vedea în acest sens problema [N fii], i.e. ex.3 din <a href="lab9.html">Lab9</a>), iar în fiecare fiu se va apela prin exec o instanță
+a programului worker, numele fișierului de sortat (i.e. "secventa.bin") fiindu-i trasferat ca argument în linia de comandă.
+<br>
+> faza de finalizare, i.e. de detecție a terminării calculului distribuit:
+se vor folosi apeluri wait în procesul supervisor pentru a aștepta terminarea proceselor workers, care vor indica prin codul de terminare dacă au finalizat cu succes sortarea, sau nu
+(recitiți programul lab8_ex4_cu-lacate.c de la ex.4 din <a href="lab8.html">Lab8</a> pentru a vedea care este codul de terminare folosit pentru a indica finalizarea cu succes a sortării);
+în clipa în care procesul supervisor detectează "terminarea calculului distribuit" prin primirea primului cod de terminare ce indică finalizarea cu succes a sortării de către un worker,
+supervisorul va opri toate celelalte procese worker care mai sunt active (în acest scop, puteți folosi apelul <tt>kill(<i>pid_worker_activ</i>,SIGTERM);</tt> ).
+<br>
+> faza de afișare a rezultatelor:
+se va afișa pe ecran conținutul sortat din fișierul "secventa.bin", apelând în acest scop programul ajutător bin-read.c de la ex.4 din <a href="lab8.html">Lab8</a>;
+pentru simplificare puteți recurge la apelarea cu <tt>system(<i>comandă</i>);</tt>.</span>)
+</p>
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+
+</body>
+</html>

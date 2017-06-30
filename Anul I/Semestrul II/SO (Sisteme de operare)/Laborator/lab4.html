@@ -1,0 +1,127 @@
+﻿<html>
+<head>
+  <title>Laborator</title>
+  <link rel="stylesheet" type="text/css" href="stiluri.css" />
+  <!-- pentru diacritice -->
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+<h2><font color="blue">Laborator #4 :</font> exerciții de antrenament</h2>
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+<!------------------------------------------------------------------------------------------------------------------------>
+<p><span class="stil_exercitii">I) Exerciții cu fișiere de comenzi (partea a 2-a):</span></p>
+
+
+<p>
+1. Să se scrie un script care să efectueze calculul iterativ al factorialului (i.e. n! = 1 * 2 * ... * n, pentru n > 0).
+<br>
+<small>(Indicație: <span class="stil_hint">valoarea pentru n se va prelua ca argument din linia de comandă prin care se lansează scriptul,
+sau se va citi cu comanda read, în caz că nu este dată în linia de comandă.</span>)</small>
+</p>
+
+<p>
+2. Să se scrie un script care să efectueze calculul recursiv al factorialului (i.e. n! = n * (n-1)!, pentru n > 0, respectiv 0! = 1).
+<br>
+<small>(Indicație: <span class="stil_hint">valoarea pentru n se va prelua ca argument din linia de comandă prin care se lansează scriptul,
+sau se va citi cu comanda read, în caz că nu este dată în linia de comandă.</span>)</small>
+</p>
+
+<p><!-- old lab.3,IV,ex.2 -->
+3. Să se scrie un script care primește ca parametru la linia de comandă un director și care compilează toate fișierele sursă C++
+aflate doar în acest director (nu și cele din subdirectoarele lui). Compilarea se realizează în felul următor: &nbsp;
+<tt>g++ fisier.cpp -o fisier</tt>
+<br>
+<small>(Indicație: <span class="stil_hint">folosind comanda basename se poate obține numele fișierului fără extensie:
+basename fisier.cpp .cpp  afișează pe stdout doar 'fisier'.</span>)</small>
+</p>
+
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<p class="stil_ex_suplimentare">Exerciții suplimentare:</p>
+
+<p>Câteva exerciții similare cu exercițiul 1 (i.e. scripturi ce calculează diverse valori într-o manieră iterativă):</p> 
+
+<p>
+4. i) Să se scrie un script care să efectueze calculul produsului n * m prin adunări repetate (i.e. n * m = n + n + ... + n, de m ori).
+<br>
+<small>(Indicație: <span class="stil_hint">valorile pentru n și m se vor prelua ca argumente din linia de comandă prin care se lansează scriptul,
+sau se vor citi cu comanda read, în caz că nu sunt date în linia de comandă.</span>)</small>
+<br>
+ii) Să se scrie un script care să efectueze calculul puterii n la m prin înmulțiri repetate.
+<br>
+<small>(Indicație: <span class="stil_hint">valorile pentru n și m se vor prelua ca argumente din linia de comandă prin care se lansează scriptul,
+sau se vor citi cu comanda read, în caz că nu sunt date în linia de comandă.</span>)</small>
+</p>
+
+<p>
+5. Să se scrie un script care să calculeze media aritmetică a n numere.
+<br>
+<small>(Indicație: <span class="stil_hint">valorile pentru n și pentru cele n numere vor fi preluate ca argumente la linia de comandă prin care se lansează scriptul,
+sau se vor citi cu comanda read, în caz că nu sunt date în linia de comandă.</span>)</small>
+</p>
+
+<p>
+6. Să se scrie un script care să calculeze valorile minime și maxime ale argumentelor date la linia de comandă.
+<br>
+<small>(Indicație: <span class="stil_hint">valorile numerice se vor citi prin comanda read, dacă nu sunt date în linia de comandă.</span>)</small>
+</p>
+
+<p>
+7. Să se scrie un script care să calculeze valoarea de rang n din șirul lui Fibonacci.
+<br>
+<small>(Indicație: <span class="stil_hint">valoarea pentru n va fi preluată ca argument la linia de comandă prin care se lansează scriptul,
+sau se va citi prin comanda read, în caz că nu este dată în linia de comandă.</span>)</small>
+</p>
+
+<p>
+8. Să se scrie un script care să calculeze valoarea numerică ce apare de cele mai multe ori, precum și numărul ei de apariții,
+în șirul de valori numerice date ca argumente în linia de comandă.
+<br>
+<small>(Indicație: <span class="stil_hint">valorile numerice se vor citi prin comanda read, dacă nu sunt date în linia de comandă.</span>)</small>
+</p>
+
+<p>
+9. Să se scrie un script care să calculeze C(n,k) (i.e. combinări de n luate câte k).
+<br>
+<small>(Indicație: <span class="stil_hint">valorile n și k se vor da ca argumente în linia de comandă prin care se lansează script-ul,
+sau se vor citi prin comanda read, în caz că nu sunt date în linia de comandă.</span>)</small>
+</p>
+
+<p>
+10. Să se scrie un script care va fi lansat cu 1+N*k+p argumente, unde k și p sunt variabile și necunoscute apriori.
+Scriptul preia primul argument într-o variabilă N și calculează suma următoarelor argumente luate câte N
+(deci suma primelor N argumente, apoi a următoarelor N numere ș.a.m.d.,
+iar dacă la sfârșit rămâne un număr mai mic decât N de argumente, va calcula doar suma acestora),
+afișând valorile sumelor pe ecran și scriindu-le în același timp într-un fișier output.txt.
+<br>
+Dacă este lansat fără nici un parametru, atunci va cere introducerea unei valori numerice N și apoi a altor N valori numerice
+(presupunem numere întregi), afișând ca rezultat doar această primă sumă.
+<br>
+<small>(Indicație: <span class="stil_hint">man expr și help shift.</span>)</small>
+</p>
+
+<p><!-- old lab.3,IV,ex.3 -->
+11. Să se scrie un script care, pentru un utilizator specificat prin UID-ul acestuia dat ca parametru în linia de comandă,
+să afișeze numele lui real (și nu numele de utilizator), precum și denumirea tuturor grupurilor din care face parte.
+<br>
+<small>(Indicație: <span class="stil_hint">pentru a obține informațiile cerute, puteți folosi comanda id și/sau prelucrați
+fișierele /etc/passwd și /etc/group.</span>)</small>
+</p>
+
+<p><!-- old ex.3 -->
+12. Să se scrie un script care să afișeze care dintre utilizatorii ce sunt studenți și al căror nume de cont începe cu o literă dată,
+au pagini web pe serverul fenrir.
+<br>
+<small>(Indicație: <span class="stil_hint">testați existența și vizibilitatea pentru toată lumea a unuia dintre fișierele index.htm sau index.html
+sau index.php, ce ar trebui să se afle în subdirectorul html din directorul home al utilizatorului ce are pagină web.</span>)</small>
+</p>
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+
+</body>
+</html>

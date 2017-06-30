@@ -1,0 +1,454 @@
+﻿
+Iată câteva posibile rezolvări pentru exercițiile din laboratorul al 10-lea:
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.1 și 2.  Încercați să le rezolvați singuri.
+
+Ex.2. Ideea este de a implementa corect cele două invocări ale comenzilor ls și rm, folosind cele două apeluri specificate (execlp, respectiv execv).
+De asemenea, de observat necesitatea ca apelurile de reacoperire să se facă în câte un proces (fiu) nou, astfel încât procesul principal să rămână activ
+și după fiecare invocare a acestora, căci mai are și alte operații de efectuat după fiecare din cele două invocări.
+
+Iată un posibil șablon de rezolvare (vă rămâne să implementați singuri codul de invocare a comenzii rm, după exemplul dat pentru comanda ls):
+
+lab10_ex2.c :
+=============
+
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+
+int main(int argc, char* argv[])
+{
+  char nume_dir[100];
+  int cod_term;
+
+  // obtinerea numelui directorului de prelucrat
+  if(argc > 1)
+  {
+    strcpy(nume_dir,argv[1]);
+  }
+  else
+  {
+    printf("Introduceti numele directorului dorit:"); scanf("%s", nume_dir);
+  }
+
+  // invocarea primei comenzi: ls -l nume_dir
+  switch( fork() )
+  {
+    case -1 : perror("Eroare la fork"); exit(1);
+    case  0 : execlp("ls","ls","-l",nume_dir,NULL); perror("Eroare la primul exec"); exit(2);
+    default : wait(&cod_term);
+              if( WIFEXITED(cod_term) )
+                 printf("Comanda ls a rulat, terminandu-se cu codul de terminare: %d.\n", WEXITSTATUS(cod_term) );
+              else
+                 printf("Comanda ls a fost terminata fortat de un semnal.\n");
+  }
+
+  // invocarea celei de-a doua comenzi: rm -r -i nume_dir
+  // TODO: implementati singuri un switch similar pentru invocarea comenzii rm
+}
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+Exerciții suplimentare:
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Rezolvări pentru câteva dintre exercițiile suplimentare.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.3  i) [ls] Să se scrie un program C care să execute comanda ls -i -l dirname, unde dirname este un parametru dat la execuția programului în linia de
+      comandă, sau directorul curent de lucru în caz că lipsește acest parametru. La sfârșitul execuției trebuie să fie afișat textul:
+      "Comanda ls a fost executata ...", dar numai în situația când într-adevăr s-a executat comanda ls, altfel să fie afișat textul:
+      "Comanda ls nu a putut fi executata...". 
+      Cerință: se va folosi primitiva execlp() și nu funcția system() !
+      ii) Să se rescrie programul de la punctul i), utilizând primitiva execl() în locul primitivei execlp().
+
+
+i) Iată o posibilă rezolvare:
+
+lab10_ex3i.c :
+==============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+int main(int argc, char *argv[])
+{
+  pid_t pid;
+  int cod_term;
+
+  if(argc != 2)
+  {
+    fprintf(stderr,"Programul trebuie apelat cu un parametru (un nume de director).\n");
+    exit(1);
+  }
+  if(-1 == (pid=fork()) )
+  {
+    perror("Eroare la fork");
+    exit(2);
+  }
+
+  if (pid == 0)
+  { /* in fiu apelez exec pentru a executa comanda dorita */
+ 
+    execlp("ls","ls","-i","-l",argv[1],NULL);
+ 
+    perror("Eroare la exec");
+    exit(10); /* folosim un numar mai mare, e.g. 10, si nu 1,2,... caci aceste valori mici ar putea fi returnate si de comanda ls ! */
+  }
+
+  /* (doar in parinte) cercetez cum s-a terminat procesul fiu */
+  wait(&cod_term);
+  if(cod_term >>8 == 10)
+       printf("Comanda ls nu a putut fi executata... (apelul exec a esuat).\n");
+  else
+  {
+       printf("Comanda ls a fost executata...");
+       if(cod_term == 0)
+          printf(" cu succes!\n");
+       else
+          printf(" dar a esuat, cu codul de terminare: %d.\n", cod_term>>8);
+  }
+  return 0;
+}
+
+ii) Rezolvare: în programul de mai sus, trebuie doar să se înlocuiască linia de cod
+execlp("ls","ls","-i","-l",argv[1],NULL);
+cu
+execl("/bin/ls","ls","-i","-l",argv[1],NULL);
+
+Deci observați că în cazul folosirii apelului execl() trebuie specificată calea absolută către comanda dorită, deoarece dacă fișierul executabil este
+specificat printr-un nume simplu (i.e., fără cale absolută sau relativă), atunci acesta nu este căutat în directoarele din variabila de mediu PATH,
+așa cum se întâmplă în cazul apelului exelp().
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4  i) [cut] Să se scrie un program C care să execute comanda cut -d: -f1,3 /etc/passwd, iar la sfârșitul execuției trebuie să fie afișat textul:
+      "Comanda cut a fost executata ...", dar numai în situația când într-adevăr s-a executat comanda cut, altfel să fie afișat textul:
+      "Comanda cut nu a putut fi executata...". 
+      Cerință: se va folosi primitiva execlp() și nu funcția system() !
+      ii) Să se rescrie programul de la punctul i), utilizând primitiva execl() în locul primitivei execlp().
+
+
+i) Iată o posibilă rezolvare:
+
+lab10_ex4i.c :
+==============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+int main()
+{
+  pid_t pid;
+  int cod_term;
+
+  if(-1 == (pid=fork()) )
+  {
+    perror("Eroare la fork");
+    exit(2);
+  }
+
+  if (pid == 0)
+  { /* in fiu apelez exec pentru a executa comanda dorita */
+ 
+    execlp("cut","cut","-d:","-f1,3","/etc/passwd",NULL);
+ 
+    perror("Eroare la exec");
+    exit(10); /* folosim un numar mai mare, e.g. 10, si nu 1,2,... caci aceste valori mici ar putea fi returnate si de comanda cut ! */
+  }
+
+  /* (doar in parinte) cercetez cum s-a terminat procesul fiu */
+  wait(&cod_term);
+  if(cod_term >>8 == 10)
+       printf("Comanda cut nu a putut fi executata... (apelul exec a esuat).\n");
+  else
+  {
+       printf("Comanda cut a fost executata...");
+       if(cod_term == 0)
+          printf(" cu succes!\n");
+       else
+          printf(" dar a esuat, cu codul de terminare: %d.\n", cod_term>>8);
+  }
+  return 0;
+}
+
+ii) Rezolvare: se procedeaza similar ca la ex.3: în programul de mai sus, trebuie doar să se înlocuiască linia de cod
+execlp("cut","cut","-d:","-f1,3","/etc/passwd",NULL);
+cu
+execl("/usr/bin/cut","cut","-d:","-f1,3","/etc/passwd",NULL);
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.5  i) [finger]  Să se scrie un program C care să execute comanda finger -p -m username, unde username este un parametru dat la execuția programului în
+      linia de comandă. La sfârșitul execuției trebuie să fie afișat textul: "Comanda finger a fost executata...", dar numai în situația când într-adevăr
+      s-a executat comanda finger, altfel să fie afișat textul: "Comanda finger nu a putut fi executata...". 
+      Cerință: se va folosi primitiva execlp() și nu funcția system() !
+      ii) Să se rescrie programul de la punctul i), utilizând primitiva execl() în locul primitivei execlp().
+
+
+i) Iată o posibilă rezolvare:
+
+lab10_ex5i.c :
+==============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+int main(int argc, char *argv[])
+{
+  pid_t pid;
+  int cod_term;
+
+  if(argc != 2)
+  {
+    fprintf(stderr,"Programul trebuie apelat cu un parametru (un nume de utilizator).\n");
+    exit(1);
+  }
+  if(-1 == (pid=fork()) )
+  {
+    perror("Eroare la fork");
+    exit(2);
+  }
+
+  if (pid == 0)
+  { /* in fiu apelez exec pentru a executa comanda dorita */
+ 
+    execlp("finger","finger","-p","-m",argv[1],NULL);
+ 
+    perror("Eroare la exec");
+    exit(10); /* folosim un numar mai mare, e.g. 10, si nu 1,2,... caci aceste valori mici ar putea fi returnate si de comanda finger ! */
+  }
+
+  /* (doar in parinte) cercetez cum s-a terminat procesul fiu */
+  wait(&cod_term);
+  if(cod_term >>8 == 10)
+       printf("Comanda finger nu a putut fi executata... (apelul exec a esuat).\n");
+  else
+  {
+       printf("Comanda finger a fost executata...");
+       if(cod_term == 0)
+          printf(" cu succes!\n");
+       else
+          printf(" dar a esuat, cu codul de terminare: %d.\n", cod_term>>8);
+  }
+  return 0;
+}
+
+Observație:
+Practic, acesta este un program identic cu lab10_ex3i.c (și cu lab10_ex4i.c) de mai sus, singura diferență fiind linia de cod:
+execlp("ls","ls","-i","-l",argv[1],NULL);
+care trebuie înlocuită cu:
+execlp("finger","finger","-p","-m",argv[1],NULL);
+plus încă câteva modificări minore: se înlocuiește "(un nume de director)" cu "(un nume de utilizator)" în afișajul din primul if,
+respectiv se înlocuiește "Comanda ls" cu "Comanda finger" în cele două afișaje de după apelul wait.
+
+
+ii) Rezolvare: se procedeaza similar ca la ex.3: în programul de mai sus, trebuie doar să se înlocuiască linia de cod
+execlp("finger","finger","-p","-m",argv[1],NULL);
+se va înlocui cu
+execl("/usr/bin/finger","finger","-p","-m",argv[1],NULL);
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.7  [Suma distribuita supervisor/workers] Să se scrie un program C care să realizeze următoarele: un proces P0 (cu rol de proces supervisor) citește
+      numere de la tastatură și le trimite împărțindu-le în mod egal la trei procese fii P1, P2 și P3 (cu rol de procese workers), acestea calculează
+      sumele parțiale și le trimit înapoi la părintele P0, iar P0 adună cele trei sume parțiale și afișează rezultatul final. 
+      Pentru comunicația între procese se vor folosi fișiere obișnuite - procesul P0 scrie numerele citite în fișierele f1i, f2i și f3i, de unde sunt citite
+      de procesele P1, P2 și respectiv P3, care le adună și scriu sumele parțiale în fișierele f1o, f2o și f3o, de unde sunt citite de P0 și adunate. 
+      Cerință: programul worker să fie apelat prin exec din fiul creat cu fork de procesul supervisor, iar numele fișierului de intrare (f{1,2,3}i) și
+      respectiv a celui de ieșire (f{1,2,3}o) să-i fie trasferate ca argumente în linia de comandă.
+      Observație: va trebui să rezolvați și unele probleme de sincronizare ce apar la comunicațiile între procese, i.e. trebuie asigurat faptul că citirea
+      unor numere din fișier se va face abia după ce acestea au fost scrise în acel fișier! 
+      (Indicație: pentru sincronizarea necesară la fișierele de intrare este suficient să creați procesele fii abia după ce s-au terminat de introdus
+      numerele de la tastatură. Iar pentru sincronizarea necesară la fișierele de ieșire este suficient să folosiți apeluri wait în procesul supervisor
+      pentru a aștepta terminarea proceselor workers, înainte de a citi sumele parțiale din fișierele de ieșire.)
+
+
+Iată o posibilă rezolvare: soluția este formată din două programe sursă C, și anume:
+
+a) supervisor.c este programul care citește numerele, creează procesele worker și le dă să calculeze sumele parțiale, iar în final calculează suma finală;
+   programul este scris astfel încât să creeze nu doar 3 procese worker, ci orice număr (citit la execuție) de procese worker:
+
+supervisor.c :
+==============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+#include <errno.h>
+
+#define MAX_NO_WORKERS      10
+#define MAX_LENGTH_FILENAME 50
+
+int main()
+{
+    int nr=0, k, NW=0, i, pid, sum=0;
+    char  input_filenames[MAX_NO_WORKERS][MAX_LENGTH_FILENAME];
+    char output_filenames[MAX_NO_WORKERS][MAX_LENGTH_FILENAME];
+    FILE *fdi[MAX_NO_WORKERS], *fdo;
+ 
+    printf("Dati numarul de procese workers: ");
+    scanf("%d", &NW);
+    if( (NW < 1) || (NW > MAX_NO_WORKERS) )
+    {
+        fprintf(stderr,"Date de intrare incorecte.\n");
+        exit(1);
+    }
+
+    for (i = 1; i <= NW; ++i)
+    {
+	sprintf( input_filenames[i], "f%di.txt", i);
+	sprintf(output_filenames[i], "f%do.txt", i);
+    }
+
+    // citirea numerelor de la tastatura si crearea celor NW fisiere de intrare
+
+    for (i = 1; i <= NW; ++i)
+    {
+	if( NULL == (fdi[i-1] = fopen(input_filenames[i], "w")) )
+        {
+	    fprintf(stderr,"Supervisor : eroare la deschiderea fisierului de intrare %s.\n", input_filenames[i]);
+            perror("Cauza erorii: ");
+	    exit(2);
+        }
+    }
+
+    printf("Introduceti secventa de numere (0 pentru terminare) :\n");
+    k = 0;
+    do {
+	   scanf("%d",&nr);
+	   if(nr != 0)
+	       fprintf(fdi[k],"%d ",nr);
+	   k = (k+1) % NW;
+       } while(nr != 0);
+ 
+    for (i = 1; i <= NW; ++i)
+    {
+	fclose(fdi[i-1]);
+    }
+    
+    // crearea celor NW procese worker care vor executa programul din sursa worker.c, cu parametri diferiti
+
+    for (i = 1; i <= NW; ++i)
+    {
+	if(-1 == (pid = fork()) )
+	{
+	    fprintf(stderr,"Supervisor : eroare la apelul fork() pentru procesul worker al %d-lea.\n", i);
+            perror("Cauza erorii: ");
+	    exit(3);
+	}
+	if (pid == 0)
+	{ // in fiu
+
+	    execl("worker", "worker", input_filenames[i], output_filenames[i], NULL);
+
+	    fprintf(stderr,"Supervisor : eroare la apelul exec() pentru procesul worker al %d-lea.\n", i);
+            perror("Cauza erorii: ");
+	    exit(4);
+	}
+	//else
+	//    wait (NULL);
+    }
+
+    // abia dupa ce am startat toate procesele worker, le astept sa se termine de executat
+
+    for (i = 1; i <= NW; ++i)
+    {
+        wait(NULL);
+    }
+
+    // citesc cele NW sume partiale din fisierele de iesire
+    for (i = 1; i <= NW; ++i)
+    {
+	if (NULL == (fdo = fopen(output_filenames[i], "r")) )
+	{
+	    fprintf(stderr,"Supervisor : eroare la deschiderea fisierului de iesire %s.\n", output_filenames[i]);
+            perror("Cauza erorii: ");
+	    exit(5);
+        }
+	if (1 != fscanf(fdo, "%d", &nr) )
+        {
+            fprintf(stderr,"Supervisor : eroare la citirea celei de a %d-a sume partiale.\n", i);
+            exit(6);
+        }
+	else
+            sum += nr;
+	fclose(fdo);
+    }
+
+    // afisez suma totala    
+    printf("Supervisor: suma secventei introduse este: %d.\n", sum);
+
+    // optional, putem facem "curatenie": stergem fisierele de intrare si de iesire
+    for (i = 1; i <= NW; ++i)
+    {
+        remove( input_filenames[i]);
+        remove(output_filenames[i]);
+    }
+    return 0;
+}
+
+b) worker.c este programul care este apelat în fiecare proces fiu creat de supervisor și care calculează o sumă parțială, a numerelor citite din
+   primul fișier primit ca parametru în linia de comandă, pe care o scrie în al doilea fișier primit ca parametru în linia de comandă:
+
+worker.c :
+==========
+
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+    int nr, sum=0;
+    FILE *fd;
+
+    // citirea numerelor si calculul sumei
+    if (NULL == (fd = fopen(argv[1], "r")) )
+    {
+	printf("Worker : eroare la deschiderea fisierului de intrare %s.\n", argv[1]);
+	return 1;
+    }
+
+    while(! feof(fd) )
+    {
+	if(1 == fscanf(fd, "%d", &nr) )
+	    sum += nr;
+    }
+    fclose(fd);
+
+    // scrierea sumei calculate    
+    if (NULL == (fd = fopen(argv[2], "w")) )
+    {
+	printf("Worker : eroare la deschiderea fisierului de iesire %s.\n", argv[2]);
+	return 2;
+    }
+    fprintf(fd, "%d\n", sum);
+    fclose(fd);
+    
+    return 0;
+}
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.6, 8 și 9. Încercați să le rezolvați singuri.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>

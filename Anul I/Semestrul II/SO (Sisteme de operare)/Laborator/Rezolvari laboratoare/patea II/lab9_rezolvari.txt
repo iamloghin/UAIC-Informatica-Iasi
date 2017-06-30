@@ -1,0 +1,336 @@
+﻿
+Iată câteva posibile rezolvări pentru exercițiile din laboratorul al 9-lea:
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.1.  Încercați să-l rezolvați singuri.
+
+Ideea este de a implementa corect un mecanism de sincronizare de forma "ping-pong",
+i.e. "acum e rândul tău - acum e rândul meu - acum e rândul tău - acum e rândul meu - ș.a.m.d.", folosind comunicații prin intermediul unui fișier.
+(Notă: mai târziu vom relua ideea folosind canale de comunicație, respectiv semnale.)
+
+Iată un posibil șablon de rezolvare (vă rămâne să implementați singuri funcțiile specificate în program):
+
+lab9_ex1.c :
+============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/types.h>
+
+void dialog_tata()
+{  //TODO: de implementat bucla dialogului pentru tata
+
+  //doua bucle imbricate, conform indicatiilor date la laborator...
+}
+
+void dialog_fiu()
+{  //TODO: de implementat bucla dialogului pentru fiu
+
+  //doua bucle imbricate, conform indicatiilor date la laborator...
+}
+
+int main()
+{
+  pid_t pid_fiu;
+
+  /* crearea unui proces fiu */
+  if(-1 == (pid_fiu=fork()) )
+  {
+    perror("Eroare la fork");  return 1;
+  }
+
+  /* ramificarea executiei */
+  if(pid_fiu == 0)
+  { /* zona de cod executata doar de catre fiu */
+    printf("\n[P1] Procesul fiu, cu PID-ul: %d.\n", getpid());
+    dialog_fiu();
+  }
+  else
+  { /* zona de cod executata doar de catre parinte */
+    printf("\n[P0] Procesul tata, cu PID-ul: %d.\n", getpid());
+    dialog_tata();
+  }
+
+  /* zona de cod comuna, executata de catre ambele procese */
+  printf("Sfarsitul executiei procesului %s.\n\n", pid_fiu == 0 ? "fiu" : "parinte" );
+  return 0;
+}
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.2.  Încercați să-l rezolvați singuri.
+
+Ideea este a implementa un calcul paralel/distribuit pe modelul "supervisor-workers" (sau "master-slaves"). Un alt exemplu, mai elaborat, de realizare
+a unui calcul de această formă, din care vă puteți inspira, îl găsiți în directorul cu programele date ca exemplu la lecția practică despre apelul fork().
+
+Iată un posibil șablon de rezolvare (vă rămâne să implementați singuri funcțiile specificate în program):
+
+lab9_ex2.c :
+============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+void calcul_tata()
+{  //TODO: de implementat calculul efectuat de tata, conform indicatiilor date la laborator...
+
+}
+
+void generare_fiu1()
+{  //TODO: de implementat generarea operanzilor de catre fiul 1, conform indicatiilor date la laborator...
+
+}
+
+void generare_fiu2()
+{  //TODO: de implementat generarea operatorilor de catre fiul 2, conform indicatiilor date la laborator...
+
+}
+
+
+int main()
+{
+  pid_t pid_fiu1, pid_fiu2 , N;
+
+  printf("Dati numarul intreg N:"); scanf("%d", &N);
+
+  /* crearea procesului fiu 1 */
+  if(-1 == (pid_fiu1=fork()) )
+  {
+    perror("Eroare la fork");   return 1;
+  }
+
+  /* ramificarea executiei */
+  if(pid_fiu1 == 0)
+  { /* zona de cod executata doar de catre fiu */
+    printf("\n[P1] Procesul fiu 1, cu PID-ul: %d.\n", getpid());
+    generare_fiu1();
+    return 0;
+  }
+  else
+  { /* zona de cod executata doar de catre parinte */
+    printf("\n[P0] Procesul tata, cu PID-ul: %d.\n", getpid());
+
+    /* crearea procesului fiu 2 */
+    if(-1 == (pid_fiu2=fork()) )
+    {
+      perror("Eroare la fork");   return 2;
+    }
+    /* ramificarea executiei */
+    if(pid_fiu2 == 0)
+    { /* zona de cod executata doar de catre fiu */
+      printf("\n[P2] Procesul fiu 2, cu PID-ul: %d.\n", getpid());
+      generare_fiu2();
+      return 0;
+    }
+    else
+    {
+      wait(NULL); wait(NULL);
+      calcul_tata();
+      return 0;
+    }
+  }
+}
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+Exerciții suplimentare:
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Rezolvări pentru câteva dintre exercițiile suplimentare.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.3  [N fii] Să se scrie un program C care să creeze N (unde N este o valoare citită de la tastatură) procese fii ai procesului inițial. Și anume,
+      procesul inițial P0 va avea ca fii procesele P1, P2, ..., PN, iar acestea nu vor avea nici un fiu. Fiecare proces își va tipări, printr-un singur
+      mesaj, numărul lui de ordine ca fiu sau proces inițial, PID-ul lui și pe cel al părintelui său. 
+      Scrieți o rezolvare nerecursivă a acestei probleme (i.e. folosiți o buclă iterativă pentru crearea proceselor).
+
+
+Iată o posibilă rezolvare:
+
+lab9_ex3.c :
+============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <stdlib.h>
+
+
+int main(int argc, char* argv[])
+{
+    int N,i;
+    pid_t pid;
+
+    printf("Introduceti numarul de fii: ");
+    scanf("%d", &N);
+
+    printf("Sunt procesul initial cu PID-ul: %d, iar parintele meu este procesul cu PID-ul: %d.\n", getpid(), getppid() );
+
+    for(i=1; i<=N; i++)
+    {
+	if(-1 == (pid=fork()))
+	{
+	    perror("Eroare la fork");
+	    exit(1);
+	}
+	if(0 == pid)
+	{
+	    printf("Sunt procesul fiu %d, avand PID-ul: %d, iar parintele meu este procesul cu PID-ul: %d.\n", i, getpid(), getppid() );
+	    return i;  // fiul nu trebuie sa reia executia buclei for, ca sa nu creeze la randul sau procese fii
+  	}
+    }
+
+    for(i=1;i<=N;i++)  // procesul initial va astepta terminarea celor N fii (altfel, cateodata (i.e. nu neaparat la toate executiile) este posibil ca
+	wait(NULL);    // unii fii sa apara ca fiind orfani (i.e. ca avand drept parinte procesul cu PID-ul 1)
+    return 0;
+}
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4  [Lista de procese (iterativă)] Să se scrie un program C care să creeze o listă de procese de lungime N (unde N este o valoare citită de la tastatură).
+      Și anume, procesul P1 va avea ca fiu pe procesul P2, acesta la rândul lui îl va avea ca fiu pe procesul P3, ș.a.m.d. până la procesul PN, care nu va
+      avea nici un fiu. Fiecare proces își va tipări, printr-un singur mesaj, numărul lui de ordine în listă, PID-ul lui, pe cel al părintelui său, precum
+      și PID-ul fiului său și codul acestuia de terminare. 
+      Scrieți o rezolvare nerecursivă a acestei probleme (i.e. folosiți o buclă iterativă pentru crearea proceselor).
+
+
+Iată o posibilă rezolvare:
+
+lab9_ex4.c :
+============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <stdlib.h>
+
+
+int main(int argc, char* argv[])
+{
+    int N, i, codterm;
+    pid_t pid;
+
+    printf("Introduceti numarul de procese: ");
+    scanf("%d", &N);
+
+    for(i=1; i<N; i++)
+    {
+	if(-1 == (pid=fork()))
+	{
+	    perror("Eroare la fork");
+	    exit(1);
+	}
+
+	if(0 != pid)
+	{
+	    wait(&codterm);   // fiecare proces va astepta terminarea prcesului fiu direct, ca sa-i obtina codul de terminare
+                   // obs: chiar daca nu se cerea afisarea codului de terminare, tot ar fi nevoie de un wait aici (altfel, cateodata (i.e. nu neaparat
+                   // la toate executiile) este posibil ca unele procese sa apara ca fiind orfane (i.e. ca avand drept parinte procesul cu PID-ul 1)
+
+            // printf("Sunt procesul %d din lantul de procese, avand PID-ul: %d, parintele meu este procesul cu PID-ul: %d, iar fiul creat de mine "
+            //       "are PID-ul: %d si s-a terminat cu codul de terminare: %d.\n", i, getpid(), getppid(), pid, codterm>>8 );
+
+            /* afisare prescurtata: */
+	    printf("Sunt procesul %d, avand PID-ul: %d, parintele are PID-ul: %d, iar fiul creat are PID-ul: %d si s-a terminat cu codul: %d.\n",
+		    i, getpid(), getppid(), pid, codterm>>8 );
+
+	    return i;  // tatal nu trebuie sa reia executia buclei for, ca sa nu creeze un al doilea proces fiu direct, apoi un al treilea, s.a.m.d.
+  	}
+        else
+	{
+	    if(i == N-1)  // ultimul proces din lant, care nu va crea un proces fiu
+	    {
+		  printf("Sunt procesul ultim, %d din lantul de procese, avand PID-ul: %d, iar parintele meu este procesul cu PID-ul: %d.\n",
+		          N, getpid(), getppid() );
+	        return N;
+	    }
+	}
+
+    }//end for
+
+    return 0;
+}
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.5  [Lista de procese (recursivă)] Să se elaboreze o soluție recursivă a problemei 4 de mai sus (scrieți o funcție recursivă pentru crearea proceselor).
+
+
+Iată o posibilă rezolvare:
+
+lab9_ex5.c :
+============
+
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <stdlib.h>
+
+int N;
+
+void creaza_fiu(int i);	 // fiecare apel al acestei functii va crea un singur proces (i.e., va face un singur apel fork())
+
+int main(int argc, char* argv[])
+{
+    printf("Introduceti numarul de procese: ");
+    scanf("%d", &N);
+    creaza_fiu(1);
+    return 0;
+}
+
+
+void creaza_fiu(int i)
+{
+    int codterm;
+    pid_t pid;
+
+    if(i < N)
+    {
+	if(-1 == (pid=fork()))
+	{
+	    perror("Eroare la fork");
+	    exit(1);
+	}
+
+	if(0 != pid)
+	{
+	    wait(&codterm); // fiecare proces va astepta terminarea prcesului fiu direct, ca sa-i obtina codul de terminare
+                   // obs: chiar daca nu se cerea afisarea codului de terminare, tot ar fi nevoie de un wait aici (altfel, cateodata (i.e. nu neaparat
+                   // la toate executiile) este posibil ca unele procese sa apara ca fiind orfane (i.e. ca avand drept parinte procesul cu PID-ul 1)
+
+            //printf("Sunt procesul %d din lantul de procese, avand PID-ul: %d, parintele meu este procesul cu PID-ul: %d, iar fiul creat de mine "
+            //       "are PID-ul: %d si s-a terminat cu codul de terminare: %d.\n", i, getpid(), getppid(), pid, codterm>>8 );
+
+            /* afisare prescurtata: */
+	    printf("Sunt procesul %d, avand PID-ul: %d, parintele are PID-ul: %d, iar fiul creat are PID-ul: %d si s-a terminat cu codul: %d.\n",
+		    i, getpid(), getppid(), pid, codterm>>8 );
+
+	    exit(i); // tatal nu trebuie sa reia executia buclei for, ca sa nu creeze un al doilea proces fiu direct, apoi un al treilea, s.a.m.d.
+  	}
+        else
+	{
+	    creaza_fiu(i+1);	// apelul recursiv
+	}
+    }
+    else  // adica i==N, deci e vorba de ultimul proces din lant, care nu va crea un proces fiu
+    {
+	printf("Sunt procesul ultim, %d din lantul de procese, avand PID-ul: %d, iar parintele meu este procesul cu PID-ul: %d.\n",
+	        N, getpid(), getppid() );
+	exit(N);
+    }
+}
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.6-8. Încercați să le rezolvați singuri.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>

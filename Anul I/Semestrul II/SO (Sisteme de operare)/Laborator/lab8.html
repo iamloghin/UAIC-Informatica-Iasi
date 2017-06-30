@@ -1,0 +1,175 @@
+﻿<html>
+<head>
+  <title>Laborator</title>
+  <link rel="stylesheet" type="text/css" href="stiluri.css" />
+  <!-- pentru diacritice -->
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<h2><font color="blue">Laborator #8 :</font> exerciții de antrenament</h2>
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+<!------------------------------------------------------------------------------------------------------------------------>
+<p><span class="stil_exercitii">Exerciții de programare C cu prelucrări de fișiere folosind lacăte pentru acces exclusiv la ele :</span></p>
+
+
+<p><!-- old ex:4 -->
+1. Implementați problema secțiunii critice de la curs în scenariul următor: se dă drept resursa partajată de procese un fișier de gestiune a produselor
+dintr-un magazin, conținând perechi de numere întregi reprezentate binar sub forma: <i>cod_produs &nbsp; stoc</i>.
+Asupra acestei resurse se vor face operațiuni de actualizare a stocului.
+Scrieți un program C care să efectueze diverse operații de vânzare/cumpărare de produse, la intervale variate de timp, operațiile fiind specificate într-un
+fișier de instrucțiuni sub forma:
+&nbsp; &nbsp; <i> cod_produs +cantitate</i> sau <i>cod_produs -cantitate</i></center> &nbsp; &nbsp;,
+reprezentând cumpărarea și respectiv vânzarea produsului având codul <i>cod_produs</i> specificat.
+<br>
+Programul va căuta în fișierul resursă dat dacă există <i>cod_produs</i> specificat în fișierul de instrucțiuni, iar dacă există, atunci va actualiza valoarea
+stocului în mod corespunzător, dar numai dacă această operație nu conduce la obținerea unei valori negative pentru stoc, altfel va afișa un mesaj de eroare corespunzător.
+Dacă nu există <i>cod_produs</i> specificat și operația propusă este <i>-cantitate</i>, programul va afișa un mesaj de eroare corespunzător și se va opri din
+procesarea fișierului de instrucțiuni.
+Iar dacă nu există <i>cod_produs</i> specificat și operatia propusă este <i>+cantitate</i>, programul va adăuga o nouă linie în fișierul resursă:
+<i>cod_produs &nbsp; cantitate</i>.
+<br>
+Programul va accesa fișierul resursă în manieră cooperantă, folosind lacăte în scriere pe durata fiecărei operațiuni de actualizare a stocului,
+astfel încât să permită execuția simultană a două sau mai multor instanțe ale programului, fără să apară efecte nedorite datorită fenomenului de <i>race conditions</i>.
+<br>
+(Indicație: <span class="stil_hint">pentru eficiența și ușurința de programare, numerele întregi vor fi reprezentate binar în fișier, și nu textual,
+astfel încât fiecare număr întreg să ocupe exact <tt>sizeof(int)</tt> octeți.
+În acest fel toate înregistrările din fișier vor avea lungime fixă, ceea ce va ușura prelucrarea lor.
+<br>
+<i>Observație</i>: a nu se confunda reprezentarea binară a datelor cu reprezentarea lor textuală în baza 2 (prin secvența de caractere '0' și '1'
+corespunzătoare șirului de biți din reprezentarea binară). Primitivele read și write folosesc reprezentarea binară !
+</span>)
+<br>
+Se va pregăti un mediu pentru testare, compus din: programul executabil, câte un fișier de instrucțiuni pentru fiecare instanță a executabilului lansată în execuție,
+fișierul asupra căruia se vor opera modificările, precum și un script bash care să lanseze în execuții paralele programul cu parametrii corespunzători (câte un fișier
+de instrucțiuni), adică o lansare pentru test ar putea fi de forma:
+<br>
+<tt>UNIX> ./prg-ex1 depozit.bin instr1.dat &amp; ./prg-ex1 depozit.bin instr2.dat &amp; ./prg-ex1 depozit.bin instr3.dat &amp; ...</tt>
+<br>
+Operațiile de actualizare vor fi implementate astfel încât să afișeze pe ecran mesaje explicative despre ceea ce se execută, mesaje însoțite de PID-ul procesului executant.
+</p>
+
+<p><!-- old ex:3 -->
+2. Implementați problema secțiunii critice de la curs în scenariul următor: se dă drept resursa partajată de procese un fișier binar, denumit "peco.bin", ce conține
+un număr real (stocat de preferință în format binar, pentru ca lungimea fișierului să fie invariabilă, <tt>sizeof(float)</tt> , motivația fiind similară cu explicația
+dată în indicația de la exercițiul 1 de mai sus). Acest număr reprezintă volumul curent de combustibil din rezervorul unei stații PECO.
+<br>
+Asupra acestei resurse se vor face operațiuni de alimentare a autovehiculelor (i.e. extragere din rezervor) și respectiv de re-alimentare a rezervei stației
+PECO (i.e. depunere în rezervor) a unei cantități de combustibil. Scrieți un program C care să efectueze diverse operațiuni de depuneri și extrageri la intervale
+variate de timp, cantitățile depuse și respectiv extrase fiind specificate ca parametri în linia de comandă, spre exemplu prin apelul:
+<br>
+<tt>UNIX> ./prg-ex2  2550 -10,9 -35,42 3500 -20,45 ...</tt>
+<br>
+se va efectua întâi o depunere a cantității de 25500 litri, apoi o extragere a cantității de 10,9 litri, ș.a.m.d.
+<br>
+Programul va accesa fișierul în manieră cooperantă folosind lacăte în scriere pe durata de efectuare a fiecărei operații de depunere sau extragere, astfel încât
+să se permită execuția simultană a două sau mai multor instanțe ale programului, fără să apară efecte nedorite datorită fenomenului de <i>race conditions</i>.
+<br>
+Operațiunile de depuneri și extrageri vor fi implementate astfel încât să afișeze pe ecran mesaje explicative despre ceea ce se execută, mesaje însoțite de PID-ul procesului.
+</p>
+
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<p class="stil_ex_suplimentare">Exerciții suplimentare:</p>
+
+<p>Alte câteva exerciții de programare C cu prelucrări de fișiere folosind lacăte:</p> 
+
+<p><!-- old ex:6 -->
+3. Să se scrie un program C care acționează asupra unui fișier ce conține perechi de întregi (adică un număr par de întregi scriși binar în fișier, pe ideea de
+<tt>(cheie,valoare)</tt> ).
+Programul va citi dintr-un fișier de "instrucțiuni", specificat ca parametru la linia de comandă, o listă de "comenzi" de forma <tt>(cheie,alter)</tt>,
+care vor fi tot perechi de întregi, reprezentați în mod binar.
+La execuție, programul va parcurge lista comenzilor și pentru fiecare astfel de comandă va căuta în fișierul prestabilit cheia specificată.
+Dacă o găsește, va aduna la valoarea cheii valoarea <tt>alter</tt> specificată în comandă, iar dacă nu o găsește, atunci va adăuga la sfârșitul fișierului o nouă
+cheie <tt>cheia</tt> cu valoarea inițială <tt>alter</tt>.
+<br>
+Ideea este de a executa mai multe instanțe ale programului simultan, care vor accesa concurent același fișier și îl vor modifica, coordonându-și însă accesul exclusiv
+(doar) la secțiunile modificate/scrise.
+<br>
+<i>Exemplu:</i> dacă în fișierul de lucru am inițial o pereche <tt>(2,5)</tt> și în două fișiere de instrucțiuni am, printre alte chei, perechile <tt>(2,9)</tt> și
+respectiv <tt>(2,-1)</tt>, atunci în fișierul de lucru voi găsi perechea <tt>(2,13)</tt>, după încheierea execuției celor două procese.
+<br>
+Programul va loga toate acțiunile sale (prin mesaje scrise la consolă), în așa fel încât comportamentul lui să poată fi urmărit. Pentru a face distincție între procesele ce
+afișează câte ceva, fiecare mesaj va fi prefixat cu PID-ul procesului care-l afișează și se va introduce un scurt <i>delay</i> (sub 1 secundă) între acțiunile programului.
+<br>
+(Indicație: <span class="stil_hint">se vor folosi apelurile de sistem open(), read(), write(), close() și respectiv fcntl() pentru punerea de lacăte pe porțiunile minimale
+dar necesare din fișierul de lucru pe care lucrează la un moment dat o instanță a programului.</span>)
+<br>
+Se va pregăti un mediu pentru testare, compus din: programul executabil, câte un fișier de instrucțiuni pentru fiecare instanță a executabilului lansată în execuție,
+fișierul asupra căruia se vor opera modificările, precum și un script bash care să lanseze în execuții paralele programul cu parametrii corespunzători (câte un fișier
+de instrucțiuni), adică o lansare pentru test ar putea fi de forma:
+<br>
+<tt>UNIX> ./prg-ex3 workfile instr1.dat &amp; ./prg-ex3 workfile instr2.dat &amp; ./prg-ex3 workfile instr3.dat &amp; ...</tt>
+</p>
+
+<p><!-- old ex:1 -->
+4. <big>[Sortare concurentă]</big>
+Să se scrie un program C care să sorteze concurent un fișier, al cărui nume se va da ca parametru în linia de comandă, în felul descris în continuare.
+<br>
+Fișierul va conține o secvență de numere întregi, neordonată. Programul va ordona crescător numerele din fișier folosind algoritmul Bubble-Sort clasic:
+se iterează în buclă parcurgeri ale secvenței de numere de la începutul secvenței spre sfârșitul ei, efectuându-se inversiuni ale perechilor ce nu sunt
+în ordinea 'mai mic decât'. Algoritmul se oprește când la ultima parcurgere nu s-a efectuat nici o inversiune.
+<br>
+La execuție se vor lansa în paralel două (sau mai multe) instanțe ale programului, care vor opera deci simultan asupra fișierului. Ca urmare, programul va trebui
+să acceseze fișierul în manieră cooperantă, folosind lacăte în scriere pe durata de efectuare a fiecărei inversiuni în fișier pentru a nu apare efecte nedorite.
+Lacătele se vor pune numai pe porțiunea strict necesară și numai pe durata minimă necesară (asemănător ca la versiunea 4 a programului demonstrativ <tt>access</tt>
+discutat la curs).
+<br>
+(Indicație: <span class="stil_hint">pentru eficiența și ușurința de programare, numerele întregi vor fi reprezentate binar în fișier, și nu textual,
+astfel încât fiecare număr întreg să ocupe exact <tt>sizeof(int)</tt> octeți.
+În acest fel toate înregistrările din fișier vor avea lungime fixă, ceea ce va ușura prelucrarea lor.
+<br>
+<i>Observație</i>: a nu se confunda reprezentarea binară a datelor cu reprezentarea lor textuală în baza 2 (prin secvența de caractere '0' și '1'
+corespunzătoare șirului de biți din reprezentarea binară). Primitivele read și write folosesc reprezentarea binară !
+</span>)
+</p>
+
+<p><!-- old ex:2 -->
+5. Modificați exercițiul 4 de mai sus astfel încât programul să primească un parametru suplimentar în linia de comandă, parametru ce va determina
+modul de parcurgere a fișierului pentru efectuarea inversiunilor.
+<br>
+Mai exact, modul de parcurgere va fi dat de al doilea parametru din linia de comandă cu care se va apela programul, cu următoarele valori posibile:
+<ul>
+<li>-i : se vor face comparații și inversiuni numai în sensul de parcurgere `început-&gt;sfârșit',
+     iar când se ajunge la sfârșitul secvenței se sare la începutul ei și se reia parcurgerea
+     de la început (adică modul implementat la exercițiul 1 de mai sus);
+<li>-s : se vor face comparații și inversiuni numai în sensul de parcurgere `sfârșit-&gt;început',
+     iar cand se ajunge la începutul secvenței se sare la sfârșitul ei și se reia parcurgerea în sens invers;
+<li>-a : se vor face comparații și inversiuni pe ambele sensuri de deplasare, `început-&gt;sfârșit' și `sfârșit-&gt;început'.
+</ul>
+<i>Experiment</i>: creați un fișier binar cu un număr mare de numere întregi și încercați să vedeți cu ce combinație a celor trei moduri de parcurgere
+de mai sus se va sorta mai repede acel fișier prin rularea a două instanțe ale programului asupra lui.
+</p>
+
+<p><!-- old ex:5 -->
+6. Să se modifice programul C creat la exercițiul 4 de mai sus (i.e. programul care execută bubble sort pe un fișier dat astfel încât să poată ordona numerele crescător
+sau descrescător, în funcție de un parametru dat în linia de comandă),
+în sensul următor: adaptați programul pentru a se comporta drept un jucător în următorul scenariu de joc:</p>
+<ul>
+  <li>vor exista atâtea fișiere de sortat câți jucători participă la joc
+  (<span class="stil_hint">pentru demonstrație, se admit doi jucători, adică se vor rula două instanțe ale programului</span>);</li>
+  <li>fiecare jucător (i.e. instanță de execuție a programului) va avea un comportament diferit ales aleator
+  (<span class="stil_hint">pentru demonstrație, un jucător va trebui să ordoneze descrescător un fișier
+  și un al doilea jucător va ordona crescător un alt fișier<span class="stil_hint">);</li>
+  <li>numerele din fișiere sunt generate aleatoriu. Fiecare jucător cunoaște numele tuturor fișierelor;</li>
+  <li>fiecare jucător pornește în ordonarea unui fișier (distinct pentru fiecare jucător);</li>
+  <li>fiecare jucător primește câte 1 punct pentru fiecare 'nepotrivire' rezolvată, adică pentru fiecare pereche 'nepotrivită' în raport cu ordinea aleasă de acel
+  jucător (<span class="stil_hint">i.e. perechi de numere aflate în ordine inversă celei alese</span>) pe care a întâlnit-o în fișierul prelucrat și a inversat-o;</li>
+  <li>la întâlnirea în fișierul prelucrat curent a 5 perechi 'nepotrivite' în raport cu ordinea aleasă de acel jucător, jucătorul va schimba fișierul de ordonat,
+  adică va începe să sorteze următorul fișier (în ordine circulară a numelor de fișiere, pentru care avem relația de ordonare lexicografică pe cuvinte).
+  Totodată, jucătorul va afișa un mesaj corespunzător, împreună cu PID-ul lui;</li>
+  <li>fiecare jucător (i.e. instanță de execuție a programului) iși va termina execuția la câștigarea a 50 de puncte sau atunci când fișierul asupra căruia lucrează
+  este deja ordonat complet în funcție de ordinea luată de acesta în calcul. Totodată, jucătorul va afișa un mesaj corespunzător pentru fiecare situație, mesaj însoțit
+  de PID-ul lui.</li>
+</ul>
+(Indicație: <span class="stil_hint">se va folosi primitiva fcntl() pentru punerea de lacăte pe porțiunile minimale dar necesare pe care lucrează la un moment dat un jucător.</span>)
+</p>
+
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+
+</body>
+</html>

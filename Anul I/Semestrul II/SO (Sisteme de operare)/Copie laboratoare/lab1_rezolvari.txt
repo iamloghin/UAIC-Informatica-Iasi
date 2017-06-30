@@ -1,0 +1,80 @@
+﻿
+Iată câteva posibile rezolvări pentru exercițiile din primul laborator:
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.1  Să se scrie comanda care afișează numele de cont și UID-urile tuturor utilizatorilor sistemului.
+      (Indicație: folosiți comanda cut și informațiile din fișierul /etc/passwd.)
+
+cut -f1,3 -d: /etc/passwd
+
+Sau (observați spațiile dintre opțiuni și valorile acestora):
+
+cut -f 1,3 -d : /etc/passwd
+
+Sau (observați ordinea opțiunilor și argumentelor):
+
+cut -f1,3 /etc/passwd -d:
+cut -d: /etc/passwd -f1,3
+cut /etc/passwd -d: -f1,3
+
+Sau (observați folosirea opțiunilor lungi în locul celor scurte):
+
+cut --fields=1,3 --delimiter=: /etc/passwd
+cut --fields 1,3 --delimiter : /etc/passwd
+
+Notă: NU merge și în forma fără egal și fără spațiu:
+cut --fields1,3 --delimiter: /etc/passwd
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Observație importantă:
+======================
+
+Astfel de combinații de specificare a opțiunilor și argumentelor se pot face și pentru exercițiile următoare,
+chiar dacă mai jos am specificat doar una dintre combinațiile posibile pentru fiecare exercițiu în parte...
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.2  Să se scrie comanda care selectează din fișierul /etc/passwd doar informațiile despre un utilizator specificat ca argument al comenzii.
+      (Indicație: folosiți comanda grep.)
+
+grep numeuser /etc/passwd
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.3  Să se scrie comanda care afișează numele și GID-urile tuturor grupurilor de utilizatori ai sistemului.
+      Suplimentar: înlocuiți ":" cu " - " în rezultatele afișate de comandă.
+      (Indicație: folosiți comanda cut și informațiile din fișierul /etc/group ; căutați opțiunea comenzii cut pentru înlocuirea delimitatorului.)
+
+cut -f1,3 -d: /etc/group
+
+Pentru cerința suplimentară:
+
+cut -f1,3 -d: --output-delimiter=" - " /etc/group
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4  Să se scrie comanda care afișează lista tuturor utilizatorilor care sunt membri ai grupului studs.
+      (Indicație: folosiți comanda grep și informațiile din fișierul /etc/passwd.)
+
+grep /fenrir/studs /etc/passwd
+
+Sau, mai precis:
+
+grep :202: /etc/passwd
+
+Notă: 202 reprezintă GID-ul pentru grupul studs, aflat din fișierul /etc/group.
+
+
+Suplimentar: dacă se dorește afișarea doar a listei studenților, cu fiecare username pe câte o linie separată:
+
+grep :202: /etc/passwd | cut -f1 -d:
+
+Iar dacă se dorește afișarea doar a listei studenților, toți pe o singură linie separați prin spații:
+
+grep :202: /etc/passwd | cut -f1 -d: | tr \\n " "
+
+grep :202: /etc/passwd | cut -f1 -d: | tr "\n" " "
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>

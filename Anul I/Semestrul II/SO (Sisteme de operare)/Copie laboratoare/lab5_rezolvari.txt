@@ -1,0 +1,627 @@
+﻿
+Iată câteva posibile rezolvări pentru exercițiile din al cincilea laborator:
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.1  Să se scrie un script care calculează și afișează numărul total de fișiere de tip obișnuit ce sunt "ascunse" (i.e. numele lor începe cu caracterul '.'),
+      numărul total de fișiere de tip alias (numărați doar link-urile simbolice) și numărul total de subdirectoare aflate într-un director dat,
+      parcurgand acel director în manieră recursivă.
+      Numele directorului de pornire se transmite ca parametru în linia de comandă, sau se va citi prin comanda read în caz contrar.
+      (Indicație: parcurgeți cu un for directorul curent și calculați informațiile solicitate, iar pentru fiecare intrare din director
+      care este de tipul (sub)director apelați recursiv scriptul.)
+      Suplimentar: să se afișeze acele informații totale pentru fiecare subdirector parcurs.
+
+Ideea de rezolvare:
+- recursia se poate implementa în două maniere diferite: fie prin apel recursiv de funcție, fie prin apel recursiv de script;
+- statisticile (i.e. valorile ce se cer a fi calculate în enunțul problemei) se calculează într-o manieră asemănătoare cu cea din rezolvările date
+  mai jos la exercițiul 4 (notă: citiți cu atenție și observația de la finalul rezolvărilor date pentru exercițiul 4).
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.2  Să se scrie un script care calculează numărul total de cuvinte și respectiv lungimea cea mai mare a liniilor de text, din toate fișierele ce conțin
+      text obișnuit (i.e. fișierele pentru care comanda file raportează "ASCII text") aflate într-un director dat, parcurgand acel director în manieră recursivă.
+      Numele directorului se transmite ca parametru în linia de comandă, sau se va citi prin comanda read în caz contrar.
+      (Indicație: parcurgeți cu un for directorul curent și calculați informațiile solicitate, iar pentru fiecare intrare din director
+      care este de tipul (sub)director apelați recursiv scriptul.)
+      Suplimentar: să se afișeze acele informații totale pentru fiecare subdirector parcurs.
+
+Ideea de rezolvare:
+- similar ca la exercițiul 1, recursia se poate implementa în două maniere diferite: fie prin apel recursiv de funcție, fie prin apel recursiv de script;
+- statisticile (i.e. valorile ce se cer a fi calculate în enunțul problemei) se calculează într-o manieră asemănătoare cu cea din rezolvarea dată mai jos
+la exercițiul 5.
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.3  Să se scrie un script care să efectueze într-o buclă pașii următori:
+       1) citește de la tastatură două numere și un operator + , - , * sau /
+       2) efectuează operația respectivă
+       3) scrie rezultatul, pe o nouă linie, în cadrul unui fișier, sub forma:  nr_operatie: operand1 operator operand2 = rezultat
+       4) reia bucla
+      Din bucla respectivă se va ieși la introducerea caracterului q pe poziția operatorului.
+      Înainte de terminare, se va scrie în fișier și numărul total de operații efectuate.
+      Numele fișierului în care se face scrierea se primește ca parametru în linia de comandă, sau se va citi prin comanda read în caz contrar.
+
+
+lab5_ex3.sh :
+=============
+#!/bin/bash
+### calculator aritmetic
+
+if [ $# -eq 1 ] ; then
+    fisier=$1
+else
+    echo -n "Dati numele fisierului: " ; read fisier
+fi
+
+nr_op=0
+opd="start"
+echo >$fisier
+
+until [ "$opd" = "q" ]
+do
+    echo -n "Dati primul numar: " ; read op1
+    echo -n "Dati al doilea numar: " ; read op2
+    echo -n "Dati operatorul: " ; read opd
+
+    let nr_op++
+    case "$opd" in
+        "+" ) let rez=op1+op2 ;;
+        "-" ) let rez=op1-op2 ;;
+        "*" ) let rez=op1*op2 ;;
+        "/" ) rez=`echo "scale=5; $op1/$op2" | bc -l` ;;
+    esac
+    echo "$nr_op:  $op1 $opd $op2 = $rez" >>$fisier
+done
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+Exerciții suplimentare:
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Rezolvări pentru câteva dintre exercițiile suplimentare.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.4  Să se scrie un script care calculează și afișează numărul total de fișiere de tip fifo și numărul total de subdirectoare
+      aflate într-un director dat, parcurgand directorul recursiv.
+      Numele directorului de pornire se transmite ca parametru în linia de comandă, sau se va citi prin comanda read în caz contrar.
+      (Indicație: parcurgeți cu un for directorul curent și calculați informațiile solicitate, iar pentru fiecare intrare din director
+      care este de tipul (sub)director apelați recursiv scriptul.)
+      Suplimentar: să se afișeze acele informații totale pentru fiecare subdirector parcurs.
+
+Ideea de rezolvare:
+
+- Similar ca la exercițiul cu calculul recursiv al factorialului din laboratorul precedent, avem următoarele posibilități de implementare:
+
+i) recursia se poate implementa în două maniere diferite:
+  a) fie prin apel recursiv de funcție (a se vedea prima soluție de mai jos),
+  b) fie prin apel recursiv de script (a se vedea celelalte trei soluții de mai jos), iar în acest caz trebuie să ținem cont și de modul de apel, i.e.
+  dacă vor fi executate toate apelurile de aceeași instanță de shell, caz în care avem "memorie comună" între apeluri (a se vedea soluțiile a treia și a patra de mai jos),
+  sau fiecare apel va fi executat de o nouă instanță a shell-ului, caz în care NU mai avem variabile partajate între apeluri (a se vedea a doua soluție de mai jos);
+
+ii) valorile intermediare ale statisticilor ce se cer calculate în manieră recursivă se pot transmite de la un apel la altul prin mai multe modalități, dintre cele patru
+  ilustrate la calculul factorialului: a) fie prin codul de terminare, b) fie prin "preluarea", în linia de comandă a apelantului, a valorii afișate pe ecran de apelat,
+  c) fie printr-o variabilă globală, d) fie printr-un al doilea parametru de apel al funcției/scriptului;
+  putem folosi oricare dintre ultimele trei, deci fără varianta a), care permite transmiterea unei singure valori, și aceea foarte limitată (la un octet fără semn).
+
+- Noutățile, față de calculul recursiv al factorialului din laboratorul precedent, sunt determinate de faptul că acum avem de prelucrat nu o secvență de numere, ci o structură
+arborescentă de directoare din sistemul de fișiere:
+
+iii) prin recursie coborâm în adâncime în arborele de fișiere, iar deplasarea pe orizontală, i.e. parcurgerea intrărilor dintr-un director, o facem cu o structură repetitivă de tipul for:
+  for f in <lista-de-intrari-din-director> ;do ... ;done
+  Iar lista de intrări din directorul ce reprezintă argumentul de la apelul curent, poate fi generată în două maniere:
+  a) fie cu comanda ls:  $(ls -A director)
+  b) fie cu șabloane de specificare a fișierelor:  * și .*
+
+iv) un alt aspect pe care trebuie să-l luăm în seamă, este cum gestionăm specificarea căii până la fișierul curent, în arborele de fișiere parcurs prin recursie? Iarăși avem două
+variante posibile de implementare:
+  a) fie specificăm explicit calea către intrarea curentă de prelucrat, i.e. $director/$f  (a se vedea primele trei soluții de mai jos)
+  b) fie schimbăm directorul curent de lucru la fiecare apel recursiv, astfel încât să putem specifica simplu intrarea curentă doar prin $f  (a se vedea soluția a patra de mai jos)
+
+
+a) Prima soluție: folosim o funcție recursivă pentru a parcurge subarborele de fișiere cu rădăcina în directorul dat.
+
+lab5_ex4a.sh :
+==============
+#!/bin/bash
+### calculeaza recursiv numarul de fisiere fifo si subdirectoare dintr-un director dat
+### afiseaza numarul total de fisiere fifo si subdirectoare continute de acesta
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati numele directorului de start: "
+    read numedir
+else
+    numedir=$1
+fi
+
+nr_fif=0
+nr_dir=0
+
+function parcurgere_director ()
+{
+    for f in `ls -A $1`
+    do
+        cale=$1/$f
+        if [ -d $cale ] ; then
+            let nr_dir++
+            parcurgere_director $cale    # apelul recursiv
+        elif [ -p $cale ] ; then
+            let nr_fif++
+        fi
+    done
+}
+
+parcurgere_director $numedir             # apelul initial
+
+echo "Directorul $numedir contine $nr_dir directoare si $nr_fif fisiere fifo."
+
+
+b) A doua soluție: în loc de funcție recursivă, folosim apelul recursiv al scriptului.
+
+Observați forma de apel a scriptului - este prima dintre formele de apel a unei comenzi simple, prin care se creează un nou proces shell (i.e.
+interpretorul bash) ce rulează o nouă instanță a scriptului. Ca atare, întrucât variabilele nr_dir și nr_fif sunt locale fiecărui proces shell
+în parte, nu mai putem doar să le incrementăm ca la soluția anterioară cu funcție apelată recursiv (unde toate apelurile sunt executate în
+cadrul unui singur proces shell, nu se creează câte un nou proces pentru fiecare apel de funcție).
+Din acest motiv, pentru a putea transmite totalurile intermediare din apelurile recursive ale scriptului, putem folosi scrierea lor pe ecran
+și preluarea în procesul apelant cu substituția specială comandă (Observație: nu merge nici să folosim codul de terminare în acest scop,
+deoarece sunt 2 valori ce trebuie transmise procesului apelant, plus că avem și limitarea de 1 octet pentru reprezentarea codului de terminare).
+
+lab5_ex4b.sh :
+==============
+#!/bin/bash
+### calculeaza recursiv numarul de fisiere fifo si subdirectoare dintr-un director dat
+### afiseaza numarul total de fisiere fifo si subdirectoare continute de acesta
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati numele directorului de start: "
+    read numedir
+else
+    numedir=$1
+fi
+
+
+nr_fif=0
+nr_dir=0
+
+for f in `ls -A $numedir`
+do
+    cale=$numedir/$f
+    if [ -d $cale ] ; then
+	let nr_dir++
+	results=` $0 $cale apel_recursiv `          # apelul recursiv (intr-un nou proces bash) si preluarea celor 2 totaluri intermediare
+        let nr_dir+=` echo $results | cut -f1 -d: `
+        let nr_fif+=` echo $results | cut -f2 -d: `
+    elif [ -p $cale ] ; then
+	let nr_fif++
+    fi
+done
+
+if test M$2 == Mapel_recursiv
+then   # apelurile recursive
+  echo "$nr_dir:$nr_fif"      # aici scriem pe ecran cele doua valori numerice (ele vor fi preluate in procesul apelant prin substitutia `...`)
+else   # doar apelul initial
+  echo "Directorul $numedir contine $nr_dir subdirectoare si $nr_fif fisiere fifo."
+fi
+
+Notă: observați folosirea M-ului în ambii termeni din ultimul test; el are doar un rol ajutător, pentru ca test-ul să nu dea eroare de sintaxă
+datorită faptului că $2 este șirul vid (ceea ce se întâmplă la apelul inițial al scriptului). Doar apelurile recursive vor primi un al doilea
+parametru, marcatorul 'apel_recursiv', pentru a putea afișa rezultatele în format diferit la apelurile recursive față de apelul inițial.
+
+Observație: această soluție are un dezavantaj - fiecare apel recursiv produce un nou proces shell și, ca urmare, dacă apelați scriptul având ca
+argument un director pentru care subarborele de fișiere cu rădăcina în el are o adâncime de aprox. 25 de nivele, vă veți atinge limita maximă de
+procese simultane per utilizator fixată pe serverul fenrir.
+
+
+În continuare vom vedea cum putem înlătura acest dezavantaj: vom folosi pentru apelul recursiv a treia formă de apel a unei comenzi simple,
+valabilă numai pentru scripturi (și anume, forma cu cuvintele cheie . sau source:  source script [parametri] ), prin care nu se creează un nou
+proces shell (i.e. interpretorul bash) pentru a rula noua instanță a scriptului, ci tot procesul shell curent o va executa.
+În acest fel, pe lângă posibilitatea de transmitere a rezultatelor intermediare prin scrierea lor pe ecran și recuperarea cu substituția specială
+comandă (cum am procedat la soluția anterioară), avem o nouă posibilitate: folosirea unor variabile la fel ca la prima soluție, cea cu funcția
+recursivă, căci de data aceasta avem un singur proces shell pe toată durata de execuție a tuturor apelurilor scriptului.
+
+
+c) A treia soluție: folosim apelul recursiv al scriptului cu forma de apelare source și variabile în care contorizăm totalurile.
+Pentru a diferenția apelul inițial de apelurile recursive ale scriptului, vom adăuga la apelurile recursive un marcator 'apel_recursiv' drept
+al doilea parametru doar la apelurile recursive. Este necesar să facem o astfel de diferențiere nu doar pentru a afișa rezultatele totale doar
+în apelul inițial (și nu și în cele recursive), dar și pentru a inițializa cu zero o singură dată, la început, cele două variabile în care
+contorizăm numărul de subdirectoare și de fișiere (similar ca la prima soluție, cea cu funcție recursivă).
+
+lab5_ex4c.sh :
+==============
+#!/bin/bash
+### calculeaza recursiv numarul de fisiere fifo si subdirectoare dintr-un director dat
+### afiseaza numarul total de fisiere fifo si subdirectoare continute de acesta
+
+case $# in
+ 0 ) echo -n "Dati numele directorului de start: "
+     read cale ;;
+ 1 ) cale=$1 ;;
+ 2 ) if test $2 != "apel_recursiv" ; then
+         echo "Something is wrong with the parameter(s) for the script..." 1>&2 ; exit 1
+     fi
+     cale=$1
+esac
+
+if test $# -lt 2   # doar apelul initial
+then
+  if test ! -d $cale ; then
+      echo "Eroare: numele dat nu exista ca director." 1>&2 ; exit 2
+  fi
+
+  nr_fif=0    # initializarea acestor variabile trebuie facuta doar la primul apel initial al scriptului
+  nr_dir=0
+fi
+
+for fis in `ls -A $cale`
+do
+    if test -d $cale/$fis ; then
+        let nr_dir++
+        source $0 $cale/$fis apel_recursiv         # apelul recursiv in forma source ...
+
+        # la intoarcerea din recursie trebuie refacuta calea dinaintea apelului (caci e un singur proces shell,
+        # si ca atare variabila cale va fi modificata in timpul apelurilor recursive)
+        # putem folosi comanda dirname pentru a reface valoarea corecta pentru variabila cale
+        cale=`dirname $cale`         # dirname practic va taia din variabila cale sufixul /$fis ce-i fusese adaugat in urma apelului recursiv
+
+    elif test -p $cale/$fis ; then
+        let nr_fif++
+    fi
+done
+
+if test $# -lt 2    # facem afisarea doar la sfarsitul calculului, in apelul initial al scriptului
+then
+    echo "Directorul $cale contine $nr_dir directoare si $nr_fif fisiere fifo."
+fi
+
+
+d) A patra soluție: similară cu cea de-a treia soluție, i.e. folosim apelul recursiv al scriptului cu forma de apelare source și variabile în care
+contorizăm totalurile, precum și un marcator pentru a diferenția apelul inițial de apelurile recursive ale scriptului, lucru necesar din aceleași
+motive ca la soluția a treia.
+Diferența față de soluția a treia constă în faptul că vom elimina necesitatea de a gestiona argumentul cale curentă (i.e. variabila cale de mai sus),
+prin renunțarea pur și simplu la acest parametru transmis scriptului. În locul lui vom folosi altă idee: schimbarea directorului curent de lucru
+înaintea apelului recursiv și refacerea sa după revenirea din apelul recursiv.
+
+lab5_ex4d.sh :
+==============
+
+#!/bin/bash
+### calculeaza recursiv numarul de fisiere fifo si subdirectoare dintr-un director dat
+### afiseaza numarul total de fisiere fifo si subdirectoare continute de acesta
+
+case $# in
+ 0 ) echo -n "Dati numele directorului de start: "
+     read director_initial ;;
+ 1 ) director_initial=$1 ;;
+ 2 ) if test $1 != "apel" -o $2 != "recursiv" ; then
+         echo "Something is wrong with the parameter(s) for the script..." 1>&2 ; exit 1
+     fi
+esac
+
+if test $# -lt 2   # doar apelul initial
+then
+  if test ! -d $director_initial ; then
+      echo "Eroare: numele dat nu exista ca director." 1>&2 ; exit 2
+  fi
+  initial_wd=`pwd`      # salvam valoarea initiala a directorului curent de lucru (pentru a o reface la final)
+  cd $director_initial  # schimbam directorul curent de lucru in directorul dat pentru calculele cerute
+
+  nr_fif=0              # initializarea acestor variabile trebuie facuta doar la apelul initial al scriptului
+  nr_dir=0
+fi
+
+
+for fis in `ls -A`
+do
+    if test -d $fis ; then
+        let nr_dir++
+        cd $fis
+        source ~/lab5_ex1d.sh apel recursiv    # apelul recursiv : numele scriptului trebuie specificat prin cale absoluta (sau relativa la directorul home)
+        cd ..				       # (nu prin cale relativa la directorul curent de lucru, caci acesta se modifica de la un apel la altul)
+    elif test -p $fis ; then
+        let nr_fif++
+    fi
+done
+
+if test $# -lt 2        # facem afisarea doar la sfarsitul calculului, in apelul initial al scriptului
+then
+    echo "Directorul $director_initial contine $nr_dir directoare si $nr_fif fisiere fifo."
+    cd $initial_wd        # refacem valoarea initiala a directorului curent de lucru
+fi
+
+Notă: de data aceasta am folosit marcatorul apel recursiv în loc de apel_recursiv pentru a avea 2 cuvinte, primul cuvânt (apel) va fi primul
+argument pentru apelurile recursive (căci nu mai avem o cale dată ca argument în aceste cazuri), iar al doilea cuvânt (recursiv) pentru a avea
+2 argumente la apelurile recursive. Se poate folosi și un singur cuvânt ca marcator (i.e. apel_recursiv), dar atunci trebuie modificate în mod
+corespunzător case-ul și cele 2 if-uri folosite pentru a diferenția apelul inițial de apelurile recursive ale scriptului.
+
+
+
+
+Observație comună pentru toate soluțiile de mai sus:
+
+În rezultatele obținute nu vor fi luate în calcul fișierele fifo sau subdirectoarele care conțin în numele lor caractere spații sau tab-uri,
+datorită modului de evaluare a enumerării din structura "for variabila in lista-de-cuvinte", ceea ce face imposibilă protejarea spațiilor din numele
+fișierelor și subdirectoarelor obținute cu comanda ls -A (sau cu șabloanele * și .*).
+
+Repararea acestui neajuns se poate face, de exemplu, folosind o singură comandă find, care implicit va parcurge recursiv directorul dat, și cu opțiunea -exec cmd
+i se poate da o comandă cmd adecvată care să facă actualizarea variabilelor de contorizare.
+Însă această soluție, cu find, nu se încadrează în scopul acestui exercițiu, acela de a implementa dvs. explicit recursia printr-un script sau printr-o funcție
+care să parcurgă recursiv prin apeluri explicite (!) directorul dat. Ca atare, ignorăm neajunsul amintit pe care-l au soluțiile propuse mai sus.
+
+Totuși, dacă doriți să tratați neapărat și această situație, a fișierelor ce conțin spații în nume, există și o altă soluție, deși nu foarte elegantă,
+de a "proteja" totuși, pentru comanda for, spațiile din numele fișierelor și subdirectoarelor obținute cu comanda ls -A (sau cu șabloanele * și .*).
+Ideea este următoarea:
+
+for f in $(ls -1A | tr " " / )
+do
+  prelucrează fișierul cu numele: $(echo $f | tr / " " )
+done
+
+Explicație: înlocuim spațiile cu un caracter invalid (i.e. ce nu poate apare în numele de fișiere) ca să generăm lista de cuvinte pentru for, iar apoi
+înlocuim la loc acel caracter "/" cu spațiu pentru a obține numele fișierului de prelucrat în iterația curentă.
+
+Similar se pot "proteja" pentru comanda for și eventualele caractere tab ce ar putea apare în numele fișierelor și subdirectoarelor obținute cu comanda ls -A
+(sau cu șabloanele * și .*).
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.5  Să se scrie un script care calculează numărul total de linii de text și respectiv de caractere din toate fișierele dintr-un director,
+      prin parcurgerea recursivă a directorului dat.
+      Numele directorului se transmite ca parametru în linia de comandă, sau se va citi prin comanda read în caz contrar.
+      (Indicație: parcurgeți cu un for directorul curent și calculați informațiile solicitate, iar pentru fiecare intrare din director
+      care este de tipul (sub)director apelați recursiv scriptul.)
+      Suplimentar: să se afișeze acele informații totale pentru fiecare subdirector parcurs.
+
+
+Exercițiul se rezolvă similar cu cel precedent, parcurgerea recursivă a subarborelui de fișiere se poate face prin oricare dintre cele 4 metode ilustrate
+mai sus, doar statisticile calculate sunt diferite.
+Vom ilustra în continuare doar prima metodă de rezolvare de la exercițiul 4, adaptată pentru calculele cerute la acest exercițiu.
+
+lab5_ex5.sh :
+=============
+#!/bin/bash
+### calculeaza recursiv numarul de linii si numarul de caractere din toate fisierele normale dintr-un director dat si din toate subdirectoarele sale
+### afiseaza numarul total de linii si numarul total de caractere calculate
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati numele directorului de start: "
+    read numedir
+else
+    numedir=$1
+fi
+
+nr_linii=0
+nr_chars=0
+
+function parcurgere_director ()
+{
+    for f in `ls -A $1`
+    do
+        cale=$1/$f
+        if [ -d $cale ] ; then
+            parcurgere_director $cale    # apelul recursiv
+        elif [ -f $cale ] ; then
+    	    rezl=`wc -l $cale | cut -d" " -f1`   #sau, echivalent: rezl=`cat $cale | wc -l`
+	    rezc=`wc -c $cale | cut -d" " -f1`   #sau, echivalent: rezc=`cat $cale | wc -c`
+
+	    let nr_linii+=rezl
+	    let nr_chars+=rezc
+        fi
+    done
+}
+
+parcurgere_director $numedir             # apelul initial
+
+echo "Directorul $numedir contine $nr_linii linii de text si $nr_chars caractere in fisierele aflate in el sau in subirectoarele sale."
+
+
+Observație: se poate rafina enunțul problemei, în sensul de a lua în calcul doar fișierele text, nu și cele binare.
+În acest caz, se poate folosi comanda file pentru a depista care dintre fișiere sunt binare și respectiv care sunt fișiere text.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.6  Să se scrie un script care să afișeze un arbore cu structura directoarelor din contul personal.
+
+lab5_ex6.sh :
+=============
+#!/bin/bash
+## afiseaza un arbore cu structura directorului curent de lucru al utilizatorului, sau al altui director specificat ca argument
+
+function afisare_indentata()
+{
+# functia primeste doua argumente: primul este un nume de director si al doilea este nivelul curent in arbore (folosit
+# pentru a crea textul de indentare utilizat la afisarea arborelui)
+ 
+  for f in `ls -A $1`    # folosim optiunea -A in loc de -a pentru a nu afisa si intrarile implicite . si ..
+  do
+      cale=$1/$f
+
+      let nivel=$2+1
+      sir_indentare=
+      for i in `seq $nivel`
+      do
+          sir_indentare=$sir_indentare"-> "
+      done
+      echo -e $sir_indentare$cale
+
+      if [ -d $cale ]  # daca-i director, apelam recursiv
+      then
+          afisare_indentata $cale $nivel
+      fi
+  done
+}
+
+if test $# -eq 0 ; then numedir=`pwd` ; else numedir=$1 ; fi
+
+echo $numedir
+afisare_indentata $numedir 0
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.7  Să se scrie un script care să afișeze toate comentariile din scripturile aflate într-un director specificat ca argument (scripturile
+      vor avea o extensie .sh pentru a le putea deosebi de alte genuri de fișiere text).
+
+lab5_ex7.sh :
+=============
+#!/bin/bash
+
+lista=`find $1 -name "*.sh"`
+for f in $lista
+do
+    echo $f
+    grep -n '#' $f | grep -v '$#' | grep -v '#!'
+done
+
+Observație: ultimele două comenzi grep au rolul de a elimina liniile în care apare variabila specială $#, respectiv de a elimina linia
+de forma #!shellul_dorit (aflată de obicei la începutul script-urilor). Evident, astfel se vor pierde la afișare eventualele comentarii
+scrise pe aceeași linie în care apare $# sau #!shell.
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.8  Să se scrie un script care primește ca parametri d (un nume de director) și n (un număr). Pentru fiecare fișier pentru care utilizatorul curent
+      are drepturi de citire și execuție, aflat în directorul dat ca parametru sau în subdirectoarele acestuia, să se afișeze primele n linii de text.
+
+lab5_ex8.sh :
+=============
+#!/bin/bash
+
+if [ $# -eq 2 ]
+then
+    if [ -d $1 ]
+    then
+	for f in `find $1 -type f`    # parcurgerea recursiva o obtinem aici cu comanda find
+	do
+	    if [ -r $f -a -x $f ]
+	    then
+		echo Fisierul $f : primele $2 linii de text sunt urmatoarele:
+		head -n $2 $f
+	    fi
+	done
+    else
+	echo "Primul argument trebuie sa fie director"
+	exit 2
+    fi
+else
+    echo "Utilizare: $0 director numar"
+    exit 1
+fi
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.9  Să se scrie un script care primește ca parametru un nume de director. Scriptul va compila fiecare fișier sursă C din directorul respectiv și
+      va tipări (i.e., afișa pe ecran) conținutul fiecărui fișier text din acest director.
+
+lab5_ex9.sh :
+=============
+#!/bin/bash
+
+function comp()
+{
+    out=`basename $1 .c`
+    gcc $1 -o $out
+}
+
+function afis()
+{
+    cat $1
+}
+
+if [ $# -eq 0 ]
+then
+    echo "Utilizare: $0 director"
+    exit 1
+else
+    if [ ! -d $1 ]
+    then
+	echo "Primul argument trebuie sa fie director!"
+	exit 2
+    else
+	for f in `ls -A $1`
+	do
+	    case $f in
+	      *.c   ) echo "fisier sursa C: $f" ; comp $f ;;
+	      *.txt ) echo "fisier text: $f"    ; afis $f ;;
+	    esac
+	done
+    fi
+fi
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+Ex.10-13  Încercați să le rezolvați singuri.
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+
+
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>
+II) Script pentru automatizarea procesului de dezvoltare de programe C :
+
+    Să se scrie un script care să vă ajute la scrierea programelor în C, prin care să se
+    automatizeze ciclul de dezvoltare: modificare sursă -> compilare -> testare (execuție).
+
+    Cerințe: scriptul va lansa editorul preferat pentru fișierul filename.c specificat ca parametru în linia de comandă (sau citit de la
+    tastatură, în caz contrar), apoi va interoga utilizatorul dacă dorește să lanseze compilatorul și în caz afirmativ o va face (fișierul
+    executabil să aibă numele filename , deci fără sufixul .c). Apoi, dacă sunt erori de compilare (lucru observabil prin erorile de compilare
+    afișate de compilator), va relua ciclul de la editare (bineînțeles cu o pauză pentru ca utilizatorul să aibă timp să citească erorile afișate
+    pe ecran), iar dacă nu sunt erori la compilare, va interoga utilizatorul dacă dorește să testeze (i.e., să execute) acel program și în caz
+    afirmativ va executa acel fișier executabil rezultat prin compilare.
+    În concluzie, la fiecare pas să se facă o interogare a utilizatorului dacă dorește să continue cu următorul pas.
+
+
+editcomp.sh :
+=============
+#!/bin/bash
+
+if [ $# -eq 0 ]
+then
+    echo -n "Dati numele fisierului sursa .c : "
+    read fisier
+else
+    fisier=$1
+fi
+
+edt=1
+
+while [ $edt -eq 1 ]
+do
+    mcedit $fisier                  # se va inlocui comanda mcedit cu numele editorului preferat
+
+    echo -n "Doriti compilarea programului? (y/n) "
+    read ans
+    if [ $ans = "y" ]
+    then
+        out=`basename $fisier .c`
+        gcc $fisier -o $out         # compilare
+        if [ $? -eq 0 ]             # compilare fara erori
+        then
+            echo -n "Doriti executarea programului? (y/n) "
+            read ans
+            if [ $ans = "y" ]
+            then
+                ./$out 
+                edt=0
+            else
+                echo "Finished ..."
+                exit 0
+            fi
+        else                       # erori la compilare
+            echo "Apasa <Enter> pentru a continua ..."
+            read edt               # acest read are doar rol de pauza
+            edt=1
+        fi
+    else
+        edt=0
+    fi
+done
+
+<!------------------------------------------------------------------------------------------------------------------------------------------------------>

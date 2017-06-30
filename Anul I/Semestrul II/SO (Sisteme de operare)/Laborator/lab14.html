@@ -1,0 +1,136 @@
+<html>
+<head>
+  <title>Laborator</title>
+  <link rel="stylesheet" type="text/css" href="stiluri.css" />
+  <!-- pentru diacritice -->
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body>
+
+<h2><font color="blue">Laborator #14 :</font> exerciții de antrenament</h2>
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+<!------------------------------------------------------------------------------------------------------------------------>
+<p><span class="stil_exercitii">Exerciții de programare C cu semnale :</span></p>
+
+
+<p>
+1. Să se scrie un program C care, rulat în background, afișează în mod periodic (e.g., din 20 în 20 de secunde)
+conținutul fișierului remember.txt (se va crea un fișier cu acest nume și un conținut oarecare, înainte de a folosi acest program).
+În plus, ori de câte ori programul va primi semnalul SIGUSR1, va executa comanda <font color="blue">finger -p</font>,
+iar la primirea semnalului SIGINT programul își va încheia execuția și va afișa un text cu un mesaj de terminare.
+<br>
+(Indicație: <span class="stil_hint">pentru afișarea periodică, se poate trata semnalul SIGALRM, generat cu apelul alarm() ce setează o alarmă de ceas.</span>)
+</p>
+
+<p>
+2. <big>[Hi-ho v2, cu semnale]</big>
+Să se rescrie programele hi.c și ho.c de la exercitiul [Hi-ho] din <a href="lab13.html">laboratorul 13</a>, folosind semnale în locul canalelor fifo
+pentru realizarea sincronizărilor necesare.
+</p>
+
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<p class="stil_ex_suplimentare">Exerciții suplimentare:</p>
+
+<p>Alte câteva exerciții de programare C cu semnale:</p> 
+
+
+<p>
+3. Să se scrie un program care realizează urmatoarele:
+mai întâi creează două procese fii, după care generează aleator într-un fișier linii de text.
+După închiderea fișierului în care scrie acele linii de text aleatoare, procesul inițial va trimite fiilor creați semnalul SIGUSR2 (primului fiu)
+și respectiv SIGUSR1 (celui de-al doilea fiu). La recepționarea semnalului, procesul care a primit SIGUSR1 va calcula lungimea totală a liniilor de text
+din fișier (i.e. numarul total de caractere) și o va afișa pe ecran, iar procesul care a primit SIGUSR2 va sorta liniile de text din fișier în ordine
+lexicografică crescătoare și va afișa pe ecran rezultatul sortării.
+<br>
+<b>Cerință</b>: sortarea să se facă în paralel cu calculul lungimii, dar rezultatele să fie afișate pe ecran de cele două procese fii în așa fel încât
+lungimea totală să apară obligatoriu înaintea liniilor de text sortate.
+<br>
+(Indicație: <span class="stil_hint">pentru a realiza acest tip de sincronizare la afișarea pe ecran, procesul care face sortarea va aștepta
+un semnal (e.g. SIGUSR1) de la celălalt proces fiu, înainte de a afișa rezultatul sortării.</span>)
+</p>
+
+<!-- :old version
+<p>
+<big>[Sum&amp;Sort]</big>
+Sa se scrie un program care realizeaza urmatoarele: mai intai creeaza doua procese fii, dupa care genereaza aleator intr-un fisier numere intregi.
+Dupa inchiderea fisierului in care scrie acele numere aleatoare, procesul initial va trimite fiilor creati semnalul SIGUSR1.
+La receptionarea acestuia, unul dintre procesele fii va calcula suma numerelor si o va afisa pe ecran,
+iar celalalt fiu va sorta numerele si va afisa pe ecran secventa sortata.
+<br>
+<b>Cerinta</b>: sortarea sa se faca in paralel cu calculul sumei, dar rezultatele sa fie afisate pe ecran de cele doua procese fii
+in felul urmator: intotdeauna(!) mai intai suma, si apoi secventa ordonata.
+<br>
+<small>(Indicatie: pentru a realiza acest tip de sincronizare la afisarea pe ecran,
+procesul care face sortarea va astepta un semnal de la celalalt, inainte de a afisa rezultatul sortarii.)
+</small>
+</p>
+-->
+
+
+<p>
+4. Să se scrie un program C utilizat pentru copierea intrării standard într-un fișier, specificat în linia de comandă a programului.
+Dacă în intervalul de 3N secunde nu este introdus nici un caracter de la tastatură, programul este terminat.
+La fiecare interval de N secunde neutilizate (i.e., fără input din partea utilizatorului), utilizatorul va fi atenționat printr-un
+mesaj corespunzător. Valoarea constantei N este specificată de asemenea ca și argument al programului în linia de comandă.
+<br>
+(Indicație: <span class="stil_hint">pentru măsurarea scurgerii intervalelor de N secunde, tratați semnalul SIGALRM, generat cu apelul alarm().</span>)
+</p>
+
+<p>
+5. Dintr-un fișier <i>fis.txt</i> două procese, ce nu sunt înrudite (i.e. nu sunt în relația părinte-fiu), trebuie să citească alternativ câte un caracter.
+Pentru sincronizarea execuției lor, cele două procese folosesc semnale. Comunicarea reciprocă a PID-urilor se va face prin canale de comunicație externe.
+Caracterele citite de fiecare proces sunt scrise în fișierele <i>fis1.txt</i> și, respectiv, <i>fis2.txt</i>.
+</p>
+
+<p>
+6. Să se scrie un program C care la execuție va genera un proces fiu și va avea comportamentul descris în continuare.
+<br>
+Procesul părinte numără încontinuu, la intervale de 1 secundă, începând de la 0, până în momentul în care este întrerupt de către utilizator prin trimiterea
+unui semnal SIGINT. De fiecare dată când procesul părinte ajunge la un număr divizibil cu 10, trimite procesului fiu semnalul SIGUSR1. Iar când primește
+semnalul SIGINT, procesul părinte trimite procesului fiu semnalul SIGUSR2. La terminarea procesului fiu, procesul părinte își încheie și el execuția.
+<br>
+Procesul fiu, în momentul primirii semnalului SIGUSR1, afișează pe ecran un mesaj de genul "fiul: am primit USR1", iar la primirea semnalului SIGUSR2,
+își încheie execuția, afișând pe ecran un mesaj corespunzător (e.g. "fiul: sfarsit executie").
+</p>
+
+<p>
+7. Se dau 3 fișiere, <i>nume.txt</i>, <i>prenume.txt</i> și <i>nota.txt</i>,
+în care sunt înregistrate, câte unul pe linie, numele, prenumele și nota obținută de mai mulți studenți la o anumită disciplină.
+<br>
+Să se scrie un program C, prin execuția căruia se generează 3 procese, fiecare proces citind datele dintr-unul dintre cele 3 fișiere date.
+Să se sincronizeze execuția celor 3 procese astfel încât să se scrie pe câte o linie, într-un fișier <i>tabel.txt</i>, informațiile citite
+de cele 3 procese de pe liniile cu același număr de ordine, sub forma "NUME PRENUME NOTA". Sincronizarea proceselor se va realiza prin semnale.
+</p>
+
+<p>
+8. <big>[Hi-ho v3, cu 4 procese]</big>
+Să se scrie patru programe C, care împreună vor afișa "ini-mini-maini-mo, " în mod repetat pe ecran, fiecare proces fiind responsabil cu afișarea
+câte unei părți a mesajului (primul afișează "ini-", al doilea "mini-", ș.a.m.d.).
+Executabilele rezultate în urma compilării programelor vor fi lansate simultan, iar sincronizarea va fi realizată exclusiv prin semnale.
+</p>
+
+<p>
+9. <big>["Sleeping barber problem"]</big>
+Să se scrie un program C care simulează desfășurarea activității într-un cabinet de stomatologie. Procesul inițial va genera un prim proces fiu,
+cu rol de asistent: acesta se va ocupa de intrarea pacienților în sala de așteptare, generându-i la intervale de timp fixe sau aleatoare.
+Pentru fiecare pacient intrat în sala de așteptare, procesul asistent va genera un proces fiu separat, care va reprezenta pacientul respectiv.
+Pacientul își va anunța cumva PID-ul procesului principal.
+<br>
+Procesul principal (ce reprezintă doctorul stomatolog) se va ocupa cu tratarea pacienților, într-o buclă repetitivă, semnalându-le pacienților
+intrarea în cabinet (din sala de așteptare) și apoi ieșirea din cabinet după terminarea tratamentului. Durata tratamentului poate fi aleatoare sau fixă.
+<br>
+Procesele create pentru fiecare pacient în parte vor afișa schimbarea stării pacientului, conform tranzițiilor:
+"intrat în sala de așteptare --&gt; în cabinetul doctorului --&gt; ieșire".  Pentru comunicarea stomatologului cu pacienții vor fi folosite semnale.
+</p>
+
+
+<!------------------------------------------------------------------------------------------------------------------------>
+<hr size="3" width="100%" noshade>
+
+</body>
+</html>
+
