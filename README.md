@@ -1,5 +1,4 @@
-## <h5 align="center">O sa incerc la vara sa pun pe git din nou, folosind Git LFS</h5>
-## <h5 align="center">Astfel incat sa poata cine mai vrea adauga materiale noi tot aici</h5>
+## <h5 align="center">O sa incerc la vara sa pun pe git din nou, folosind Git LFS<br>Astfel incat sa poata cine mai vrea adauga materiale noi tot aici</h5>
 
 <h3 align="center">Datorita unor probleme de suport pe Github arhiva de materiale a fost mutata pe mega</h3>
 
