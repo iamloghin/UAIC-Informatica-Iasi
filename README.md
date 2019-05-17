@@ -1,3 +1,6 @@
+## <h5 align="center">O sa incerc la vara sa pun pe git din nou, folosind Git LFS</h5>
+## <h5 align="center">Astfel incat sa poata cine mai vrea adauga materiale noi tot aici</h5>
+
 <h3 align="center">Datorita unor probleme de suport pe Github arhiva de materiale a fost mutata pe mega</h3>
 
 ### <div align="center">👉 [Pagina cu materiale din anul I & II](https://mega.nz/#F!q4lG1C5L!gYtE6gwkG30-GrZ6SyV2sA) 👈</div>
