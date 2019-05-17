@@ -10,5 +10,8 @@
 <h4 align="center"> :heart: Materiale stranse pe parcursul facultatii :heart: </h4>
 
 ### <div align="center">[Pagina web a facultatii](https://www.info.uaic.ro/bin/Programs/Undergraduate)</div>
+### <div align="center">[Orarul facultatii](https://profs.info.uaic.ro/~orar/)</div>
+### <div align="center">[Orarul salilor libere](https://profs.info.uaic.ro/~orar/globale/sali_libere.html)</div>
+### <div align="center">[Structura anului universitar](http://www.uaic.ro/studii/structura-anului-universitar/)</div>
 
 <p align="center"><img src="https://github.com/logalex96/UAIC-Informatica-Iasi/blob/master/final.png" alt="final"></p>
