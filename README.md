@@ -2,6 +2,8 @@
 
 <h3 align="center">Datorita unor probleme de suport pe Github arhiva de materiale a fost mutata pe mega</h3>
 
+<h3 align="center">Am pierdut arhivele din anul III sem 2, sorry, faceti voi rost.</h3>
+
 ### <div align="center">👉 [Pagina cu materiale din anul I & II & III - sem I](https://mega.nz/#F!q4lG1C5L!gYtE6gwkG30-GrZ6SyV2sA) 👈</div>
 
 <h1 align="center">
