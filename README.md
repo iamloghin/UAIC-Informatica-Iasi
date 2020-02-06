@@ -27,4 +27,4 @@
 ### <div align="center">[Orarul salilor libere](https://profs.info.uaic.ro/~orar/globale/sali_libere.html)</div>
 ### <div align="center">[Structura anului universitar](http://www.uaic.ro/studii/structura-anului-universitar/)</div>
 
-<p align="center"><img src="https://github.com/logalex96/UAIC-Informatica-Iasi/blob/master/final.png" alt="final"></p>
+<p align="center"><img src="https://github.com/logalex96/UAIC-Informatica-Iasi/blob/master/final.png" alt="final_part"></p>
