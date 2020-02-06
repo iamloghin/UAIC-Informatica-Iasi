@@ -9,7 +9,9 @@
   <li>dotNet2 : Repo `.net2` daca sunteti curiosi, e incomplet</li>
   <li>Calcul numeric: - </li>
   <li>Android: Repo `ShoppingAssistant` o aplicatie de o noapte.</li>
-</ul>  
+</ul>
+
+##
 
 ### <div align="center">👉 [Pagina cu materiale din anul I & II & III - sem I](https://mega.nz/#F!q4lG1C5L!gYtE6gwkG30-GrZ6SyV2sA) 👈</div>
 
